@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+evaluation/results.json
+evaluation/*.sqlite
+.env
+.ruff_cache
+.snowflake
+*.sqlite

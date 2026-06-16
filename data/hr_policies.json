@@ -1,0 +1,22 @@
+[
+  {
+    "id": "pto-001",
+    "title": "Paid Time Off (PTO) Policy",
+    "content": "All full-time employees receive 20 PTO days per year. PTO days accrue at a rate of 1.67 days per month. Unused PTO days can be carried over up to a maximum of 5 days into the next calendar year. PTO requests must be submitted at least 2 weeks in advance for periods longer than 3 consecutive days."
+  },
+  {
+    "id": "remote-001",
+    "title": "Remote Work Policy",
+    "content": "Employees may work remotely up to 3 days per week with manager approval. A stable internet connection and dedicated workspace are required. Core collaboration hours are 10:00 AM to 3:00 PM local time. Remote work arrangements must be reviewed quarterly."
+  },
+  {
+    "id": "benefits-001",
+    "title": "Health Benefits",
+    "content": "The company provides comprehensive health insurance including medical, dental, and vision coverage. Coverage begins on the first day of employment. Employees may add dependents during open enrollment or within 30 days of a qualifying life event."
+  },
+  {
+    "id": "expense-001",
+    "title": "Expense Reimbursement Policy",
+    "content": "Business expenses must be submitted within 30 days of incurrence. Receipts are required for all expenses over $25. Travel expenses require pre-approval for amounts exceeding $500. Reimbursement is processed within 10 business days of approval."
+  }
+]
