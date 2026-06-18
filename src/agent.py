@@ -60,6 +60,9 @@ class InternalDeveloperAssistant:
 
         self._tool_selection_prompt = TOOL_SELECTION_PROMPT
         self._answer_generation_prompt = ANSWER_GENERATION_PROMPT
+        self._doc_file = (
+            "documentation.json" if version == "v1" else "documentation_v2.json"
+        )
 
     def _select_tool_llm(self, query: str) -> str:
         """Use LLM to select the appropriate tool.
@@ -127,6 +130,8 @@ class InternalDeveloperAssistant:
             else:
                 expression = query
             return tool_fn(expression)
+        if tool_name == "documentation_search":
+            return tool_fn(query, data_file=self._doc_file)
         return tool_fn(query)
 
     def _generate_answer_llm(

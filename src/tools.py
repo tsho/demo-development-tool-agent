@@ -9,9 +9,9 @@ from pathlib import Path
 DATA_DIR = Path(__file__).parent.parent / "data"
 
 
-def documentation_search(query: str) -> dict:
+def documentation_search(query: str, data_file: str = "documentation.json") -> dict:
     """Search internal developer documentation."""
-    docs = json.loads((DATA_DIR / "documentation.json").read_text())
+    docs = json.loads((DATA_DIR / data_file).read_text())
     query_lower = query.lower()
     stop_words = {"what", "is", "the", "a", "an", "how", "can", "it", "in", "our", "if"}
     keywords = [

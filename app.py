@@ -155,38 +155,54 @@ def main():
     # =========================================================
     # SECTION 2: v2 - Improved Agent
     # =========================================================
-    st.header("2. Agent v2 - Improved Prompts (Feedback Loop)")
+    st.header("2. Agent v2 - Feedback Loop Improvements")
 
-    st.markdown("**Issue identified by AgentGPA:** Act score dropped on Case 2")
+    st.markdown("**Issues identified by AgentGPA on Case 2:**")
     st.markdown(
-        "> v1 prompt says *'enrich with best practices'* → "
-        "LLM adds information not in source data (hallucination)"
+        "1. Knowledge base missing internal coding standards "
+        "→ LLM cannot find correct answer\n"
+        "2. Prompt says *'enrich with best practices'* "
+        "→ LLM fabricates PEP8 answer (4 spaces instead of our 2 spaces)"
     )
 
-    st.markdown("**Fix applied:**")
-    col_tool2, col_answer2 = st.columns(2)
-    with col_tool2:
-        st.markdown("*Tool Selection (v2):*")
-        st.code(
-            "Pick the best tool.\n"
-            "Available tools:\n"
-            "- documentation_search: API rate limits,\n"
-            "  deployment, incidents, onboarding\n"
-            "- hr_policy_search: PTO, benefits, remote\n"
-            "- calculator: math, percentages, time\n\n"
-            "RULE: ANY numerical computation → calculator",
-            language="text",
-        )
-    with col_answer2:
-        st.markdown("*Answer Generation (v2):*")
-        st.code(
-            "Answer using ONLY the context below.\n"
-            "Do NOT add information not in context.\n"
-            "If context has a calculation result,\n"
-            "present it clearly.\n\n"
-            "Answer based strictly on context above.",
-            language="text",
-        )
+    st.markdown("**Fixes applied:**")
+
+    # Fix 1: Knowledge base
+    st.markdown("*Fix 1 - Knowledge base expansion:*")
+    st.markdown(
+        """
+<div style="font-family: monospace; font-size: 0.82em; line-height: 1.6; background: #1e1e1e; padding: 12px; border-radius: 6px;">
+<span style="color: #3fb950;">+ doc-006: "Python Coding Standards"</span><br>
+<span style="color: #3fb950;">+ "All Python code in our monorepo uses</span><br>
+<span style="color: #3fb950;">+  2-space indentation. This differs from</span><br>
+<span style="color: #3fb950;">+  PEP8 (4 spaces) and is enforced by our</span><br>
+<span style="color: #3fb950;">+  pre-commit hooks."</span><br>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    # Fix 2: Prompt diff
+    st.markdown("*Fix 2 - Answer generation prompt (grounding constraint):*")
+    st.markdown(
+        """
+<div style="font-family: monospace; font-size: 0.82em; line-height: 1.6; background: #1e1e1e; padding: 12px; border-radius: 6px;">
+<span style="color: #f85149;">- You are a senior developer assistant with</span><br>
+<span style="color: #f85149;">-   expertise in deployment, CI/CD...</span><br>
+<span style="color: #f85149;">- Answer using context as a starting point,</span><br>
+<span style="color: #f85149;">-   but ENRICH with industry best practices</span><br>
+<span style="color: #f85149;">-   and additional helpful details.</span><br>
+<span style="color: #f85149;">- Provide comprehensive, expert-level answer.</span><br>
+<br>
+<span style="color: #3fb950;">+ Answer using ONLY the context below.</span><br>
+<span style="color: #3fb950;">+ Do NOT add information not in context.</span><br>
+<span style="color: #3fb950;">+ If not enough info, say</span><br>
+<span style="color: #3fb950;">+   "I don't have enough information".</span><br>
+<span style="color: #3fb950;">+ Answer based strictly on context above.</span><br>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
     st.markdown("**v2 Scores:**")
 
@@ -298,9 +314,9 @@ def main():
     # Key takeaway
     st.markdown(
         """
-**Key Finding:** Prompt grounding constraint (`"answer ONLY from context"`)
-improved Act score from 0.80 → 1.00 on Case 2 (deployment process),
-eliminating hallucination without affecting other cases.
+**Key Finding:** Case 2 (Python indentation rule) — v1 hallucinates PEP8
+(4 spaces) because the doc is missing AND the prompt says "enrich."
+v2 fixes both: adds internal doc (2 spaces) + grounding constraint.
 """
     )
 

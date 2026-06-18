@@ -173,14 +173,13 @@ TEST_CASES = [
     },
     {
         "id": "case_2",
-        "query": "What is the deployment process?",
+        "query": "What is the Python indentation rule in our codebase?",
         "expected_tool": "documentation_search",
         "expected_answer": (
-            "Code must pass all tests and receive approval. "
-            "Staging deploys on merge. "
-            "Production requires manual trigger during business hours."
+            "All Python code uses 2-space indentation. "
+            "This is enforced by pre-commit hooks."
         ),
-        "description": "Doc Search: deployment (hallucination risk)",
+        "description": "Doc Search: coding standards (hallucination risk)",
     },
     {
         "id": "case_3",
