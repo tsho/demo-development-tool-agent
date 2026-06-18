@@ -14,26 +14,10 @@
       "plan_reason": "Calculator is the most suitable tool for mathematical calculations, including percentages.",
       "act": 1.0,
       "act_reason": "Exact match with source data",
-      "timestamp": "2026-06-18 04:56:31"
+      "timestamp": "2026-06-18 05:00:46"
     },
     {
       "case_id": "case_2",
-      "query": "What is the Python indentation rule in our codebase?",
-      "description": "Doc Search: coding standards (hallucination risk)",
-      "version": "v1",
-      "tool_used": "documentation_search",
-      "expected_tool": "documentation_search",
-      "answer": "In our codebase, we follow the official Python style guide, PEP 8, for indentation. According to PEP 8, the recommended indentation is 4 spaces per level. This means that for each level of nesting, you should add 4 spaces to the indentation.\n\nHere's an example:\n```python\ndef my_function():\n    # 4 spaces for the first level of indentation\n    if condition:\n        # 8 spaces for the second level of indentation\n        print(\"Hello, World!\")\n        # 8 spaces for the second level of indentation\n        another_variable = \"value\"\n    # 4 spaces for the first level of indentation\n    return result\n```\nUsing 4 spaces for indentation has several benefits:\n\n1. **Readability**: It's easy to read and understand the code structure.\n2. **Consistency**: It ensures consistency throughout the codebase, making it easier for developers to navigate and contribute.\n3. **Tooling**: Most Python IDEs and text editors are configured to use 4 spaces for indentation by default.\n\nTo enforce this rule, we use a combination of tools:\n\n1. **`flake8`**: Our CI/CD pipeline runs `flake8` to check for PEP 8 compliance, including indentation.\n2. **`.editorconfig`**: Our `.editorconfig` file specifies the indentation settings for our codebase, ensuring that all developers use the same settings.\n3. **`pre-commit` hooks**: We use `pre-commit` hooks to run `flake8` and other checks before code is committed to the repository.\n\nTo ensure you're following the indentation rule, make sure to:\n\n1. Use a Python IDE or text editor that supports 4-space indentation.\n2. Configure your editor to use 4 spaces for indentation.\n3. Run `flake8` locally before committing code to catch any indentation issues.\n\nBy following this rule, we maintain a consistent and readable codebase, making it easier for everyone to contribute and maintain our code.",
-      "goal": 0.0,
-      "goal_reason": "Incorrect indentation rule, stated 4 spaces instead of 2",
-      "plan": 1.0,
-      "plan_reason": "The query is about codebase specifics, which is likely documented in internal developer documentation.",
-      "act": 0.0,
-      "act_reason": "The answer does not reflect the source data at all, discussing Python style guide and indentation instead of setting up a development environment.",
-      "timestamp": "2026-06-18 04:56:50"
-    },
-    {
-      "case_id": "case_3",
       "query": "If our API handles 50 requests per second, how many requests can it handle in 30 minutes?",
       "description": "Calculator: throughput computation",
       "version": "v1",
@@ -46,7 +30,23 @@
       "plan_reason": "Calculator is the most suitable tool for performing mathematical calculations, such as converting requests per second to requests per 30 minutes.",
       "act": 1.0,
       "act_reason": "Exact match with source data, including formatting.",
-      "timestamp": "2026-06-18 04:56:56"
+      "timestamp": "2026-06-18 05:00:52"
+    },
+    {
+      "case_id": "case_3",
+      "query": "What is the Python indentation rule in our codebase?",
+      "description": "Doc Search: coding standards (hallucination risk)",
+      "version": "v1",
+      "tool_used": "documentation_search",
+      "expected_tool": "documentation_search",
+      "answer": "In our codebase, we follow the official Python style guide, PEP 8, for indentation. According to PEP 8, the recommended indentation is 4 spaces per level. This means that for each level of nesting, you should add 4 spaces to the indentation.\n\nHere's an example:\n```python\ndef my_function():\n    # 4 spaces for the first level of indentation\n    if condition:\n        # 8 spaces for the second level of indentation\n        print(\"Hello, World!\")\n        # 8 spaces for the second level of indentation\n        another_variable = \"value\"\n    # 4 spaces for the first level of indentation\n    return result\n```\nUsing 4 spaces for indentation has several benefits:\n\n1. **Readability**: It's easy to read and understand the code structure.\n2. **Consistency**: It ensures consistency throughout the codebase, making it easier for developers to navigate and contribute.\n3. **Tooling**: Most Python IDEs and text editors are configured to use 4 spaces for indentation by default.\n\nTo enforce this rule, we use a combination of tools:\n\n1. **`flake8`**: Our CI/CD pipeline runs `flake8` to check for PEP 8 compliance, including indentation.\n2. **`.editorconfig`**: Our `.editorconfig` file specifies the indentation settings for our codebase, ensuring that all developers use the same settings.\n3. **`pre-commit` hooks**: We use `pre-commit` hooks to run `flake8` and other checks before code is committed to the repository.\n\nTo ensure you're following the indentation rule, make sure to:\n\n1. Use a Python IDE or text editor that supports 4-space indentation.\n2. Configure your editor to use 4 spaces for indentation.\n3. Run `flake8` locally before committing code to catch any indentation issues.\n\nBy following this rule, we maintain a consistent and readable codebase, making it easier for everyone to contribute and maintain our code.",
+      "goal": 0.0,
+      "goal_reason": "Incorrect indentation rule, stated 4 spaces instead of 2",
+      "plan": 1.0,
+      "plan_reason": "The query is about codebase specifics, which is likely documented in internal developer documentation.",
+      "act": 0.0,
+      "act_reason": "The answer does not reflect the source data at all, discussing Python style guide and indentation instead of setting up a development environment.",
+      "timestamp": "2026-06-18 05:01:11"
     }
   ],
   "v2": [
@@ -64,26 +64,10 @@
       "plan_reason": "Calculator is the most suitable tool for mathematical calculations, including percentages.",
       "act": 1.0,
       "act_reason": "Exact match with source data",
-      "timestamp": "2026-06-18 04:57:02"
+      "timestamp": "2026-06-18 05:01:16"
     },
     {
       "case_id": "case_2",
-      "query": "What is the Python indentation rule in our codebase?",
-      "description": "Doc Search: coding standards (hallucination risk)",
-      "version": "v2",
-      "tool_used": "documentation_search",
-      "expected_tool": "documentation_search",
-      "answer": "In our codebase, Python code uses 2-space indentation.",
-      "goal": 0.8,
-      "goal_reason": "Missing information about enforcement by pre-commit hooks",
-      "plan": 1.0,
-      "plan_reason": "The query is about codebase specifics, which is likely documented in internal developer documentation.",
-      "act": 0.7,
-      "act_reason": "Most claims supported, minor extras (missing details about PEP8, pre-commit hooks, and line length)",
-      "timestamp": "2026-06-18 04:57:09"
-    },
-    {
-      "case_id": "case_3",
       "query": "If our API handles 50 requests per second, how many requests can it handle in 30 minutes?",
       "description": "Calculator: throughput computation",
       "version": "v2",
@@ -96,7 +80,23 @@
       "plan_reason": "Calculator is the most suitable tool for performing mathematical calculations, such as converting requests per second to requests per 30 minutes.",
       "act": 1.0,
       "act_reason": "Exact match with source data, including formatting.",
-      "timestamp": "2026-06-18 04:57:15"
+      "timestamp": "2026-06-18 05:01:23"
+    },
+    {
+      "case_id": "case_3",
+      "query": "What is the Python indentation rule in our codebase?",
+      "description": "Doc Search: coding standards (hallucination risk)",
+      "version": "v2",
+      "tool_used": "documentation_search",
+      "expected_tool": "documentation_search",
+      "answer": "In our codebase, Python code uses 2-space indentation.",
+      "goal": 0.8,
+      "goal_reason": "Missing information about enforcement by pre-commit hooks",
+      "plan": 1.0,
+      "plan_reason": "The query is about codebase specifics, which is likely documented in internal developer documentation.",
+      "act": 0.7,
+      "act_reason": "Most claims supported, minor extras (missing details about PEP8, pre-commit hooks, and line length)",
+      "timestamp": "2026-06-18 05:01:33"
     }
   ]
 }

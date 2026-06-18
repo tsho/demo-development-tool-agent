@@ -173,16 +173,6 @@ TEST_CASES = [
     },
     {
         "id": "case_2",
-        "query": "What is the Python indentation rule in our codebase?",
-        "expected_tool": "documentation_search",
-        "expected_answer": (
-            "All Python code uses 2-space indentation. "
-            "This is enforced by pre-commit hooks."
-        ),
-        "description": "Doc Search: coding standards (hallucination risk)",
-    },
-    {
-        "id": "case_3",
         "query": (
             "If our API handles 50 requests per second, "
             "how many requests can it handle in 30 minutes?"
@@ -190,6 +180,16 @@ TEST_CASES = [
         "expected_tool": "calculator",
         "expected_answer": "90,000 requests",
         "description": "Calculator: throughput computation",
+    },
+    {
+        "id": "case_3",
+        "query": "What is the Python indentation rule in our codebase?",
+        "expected_tool": "documentation_search",
+        "expected_answer": (
+            "All Python code uses 2-space indentation. "
+            "This is enforced by pre-commit hooks."
+        ),
+        "description": "Doc Search: coding standards (hallucination risk)",
     },
 ]
 
