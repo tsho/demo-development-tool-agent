@@ -77,7 +77,60 @@ def main():
     """Render the Streamlit dashboard."""
     st.title("AgentGPA Evaluation Dashboard")
     st.markdown("**Internal Developer Assistant** - Deboxx Poland Demo")
-    st.markdown("*Framework: Goal / Plan / Act*")
+    st.markdown("*AI Agent for developer questions: docs, policies, calculations*")
+    st.divider()
+
+    # =========================================================
+    # Agent Architecture Diagram
+    # =========================================================
+    st.header("Agent Architecture")
+
+    mermaid_diagram = """\
+flowchart LR
+    User([Developer Query])
+    LLM_Router["LLM Router\\n(Tool Selection Prompt)"]
+    DocSearch["documentation_search\\nInternal Docs"]
+    HRSearch["hr_policy_search\\nHR Policies"]
+    Calc["calculator\\nMath Engine"]
+    LLM_Answer["LLM Answer Generator\\n(Answer Generation Prompt)"]
+    Response([Agent Response])
+
+    User --> LLM_Router
+    LLM_Router -->|technical| DocSearch
+    LLM_Router -->|policy| HRSearch
+    LLM_Router -->|math| Calc
+    DocSearch --> LLM_Answer
+    HRSearch --> LLM_Answer
+    Calc --> Response
+    LLM_Answer --> Response
+"""
+
+    st.components.v1.html(
+        f"""
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+        <div class="mermaid">
+        {mermaid_diagram}
+        </div>
+        <script>
+            mermaid.initialize({{
+                startOnLoad: true,
+                theme: 'dark',
+                themeVariables: {{
+                    primaryColor: '#5470c6',
+                    primaryTextColor: '#fff',
+                    lineColor: '#91cc75',
+                    secondaryColor: '#fac858'
+                }}
+            }});
+        </script>
+        """,
+        height=250,
+    )
+
+    st.caption(
+        "LLM Router and Answer Generator are powered by Snowflake Cortex "
+        "(llama3.1-70b). Calculator results bypass the Answer Generator."
+    )
     st.divider()
 
     data = _load_results()
@@ -145,6 +198,7 @@ def main():
             st.markdown(f"**Query:** {r['query']}")
             st.markdown(f"**Tool:** `{r['tool_used']}`")
             st.markdown(f"**Answer:** {r['answer']}")
+            st.markdown(f"**Expected:** {r.get('expected_answer', 'N/A')}")
             c1, c2, c3 = st.columns(3)
             c1.metric("Goal", f"{r['goal']:.2f}", help=r["goal_reason"])
             c2.metric("Plan", f"{r['plan']:.2f}", help=r["plan_reason"])
@@ -228,6 +282,7 @@ def main():
             st.markdown(f"**Query:** {r['query']}")
             st.markdown(f"**Tool:** `{r['tool_used']}`")
             st.markdown(f"**Answer:** {r['answer']}")
+            st.markdown(f"**Expected:** {r.get('expected_answer', 'N/A')}")
             c1, c2, c3 = st.columns(3)
             c1.metric("Goal", f"{r['goal']:.2f}", help=r["goal_reason"])
             c2.metric("Plan", f"{r['plan']:.2f}", help=r["plan_reason"])

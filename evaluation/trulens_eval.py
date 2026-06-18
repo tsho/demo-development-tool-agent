@@ -7,6 +7,7 @@ Results are saved to evaluation/trulens_results.json for the Streamlit dashboard
 """
 
 import json
+import logging
 import os
 import sys
 import time
@@ -22,6 +23,9 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 from snowflake.snowpark import Session  # noqa: E402
 
 from src.agent import InternalDeveloperAssistant  # noqa: E402
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
 
 # --- Constants ---
 
@@ -40,7 +44,7 @@ def _create_snowpark_session() -> Session:
     ]
     missing = [k for k in required if not os.environ.get(k)]
     if missing:
-        print(f"[ERROR] Missing env vars: {', '.join(missing)}")
+        logger.error("Missing env vars: %s", ", ".join(missing))
         sys.exit(1)
 
     return Session.builder.configs(
@@ -207,13 +211,13 @@ def _run_version(session, version: str) -> list[dict]:
     Returns:
         List of result dicts.
     """
-    print(f"\n  {'─' * 50}")
-    print(f"  Agent {version.upper()}")
-    print(f"  {'─' * 50}")
+    logger.info("\n  %s", "─" * 50)
+    logger.info("  Agent %s", version.upper())
+    logger.info("  %s", "─" * 50)
 
     results = []
     for case in TEST_CASES:
-        print(f"\n  [{case['id']}] {case['description']}")
+        logger.info("\n  [%s] %s", case["id"], case["description"])
 
         agent = InternalDeveloperAssistant(version=version, snowpark_session=session)
         response = agent.run(case["query"])
@@ -239,9 +243,12 @@ def _run_version(session, version: str) -> list[dict]:
         )
         act_score, act_reason = _judge_act(session, response.answer, context)
 
-        print(f"    Tool: {response.tool_used}")
-        print(f"    Answer: {response.answer[:60]}...")
-        print(f"    Goal={goal_score:.2f} Plan={plan_score:.2f} Act={act_score:.2f}")
+        logger.info("    Tool: %s", response.tool_used)
+        logger.info("    Answer: %s...", response.answer[:60])
+        logger.info(
+            "    Goal=%.2f Plan=%.2f Act=%.2f",
+            goal_score, plan_score, act_score,
+        )
 
         results.append(
             {
@@ -251,6 +258,7 @@ def _run_version(session, version: str) -> list[dict]:
                 "version": version,
                 "tool_used": response.tool_used,
                 "expected_tool": case["expected_tool"],
+                "expected_answer": case["expected_answer"],
                 "answer": response.answer,
                 "goal": goal_score,
                 "goal_reason": goal_reason,
@@ -267,54 +275,57 @@ def _run_version(session, version: str) -> list[dict]:
 
 def run_trulens_evaluation():
     """Run the AgentGPA evaluation for v1 and v2."""
-    print("=" * 60)
-    print("  AgentGPA Evaluation - Internal Developer Assistant")
-    print("  Deboxx Poland Demo (v1 vs v2 Comparison)")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("  AgentGPA Evaluation - Internal Developer Assistant")
+    logger.info("  Deboxx Poland Demo (v1 vs v2 Comparison)")
+    logger.info("=" * 60)
 
     # Connect
-    print("\n[1/4] Connecting to Snowflake...")
+    logger.info("\n[1/4] Connecting to Snowflake...")
     session = _create_snowpark_session()
-    print(f"  Connected: {session.get_current_account()}")
+    logger.info("  Connected: %s", session.get_current_account())
 
     # Run v1
-    print("\n[2/4] Evaluating v1 (weak prompts)...")
+    logger.info("\n[2/4] Evaluating v1 (weak prompts)...")
     v1_results = _run_version(session, "v1")
 
     # Run v2
-    print("\n[3/4] Evaluating v2 (improved prompts)...")
+    logger.info("\n[3/4] Evaluating v2 (improved prompts)...")
     v2_results = _run_version(session, "v2")
 
     # Save combined results
-    print("\n[4/4] Saving results...")
+    logger.info("\n[4/4] Saving results...")
     all_results = {"v1": v1_results, "v2": v2_results}
     RESULTS_PATH.write_text(json.dumps(all_results, indent=2, ensure_ascii=False))
-    print(f"  Saved to: {RESULTS_PATH}")
+    logger.info("  Saved to: %s", RESULTS_PATH)
 
     # Summary
-    print("\n" + "=" * 60)
-    print("  COMPARISON: v1 vs v2")
-    print("=" * 60)
-    print()
-    print(f"  {'Case':<10} {'':5} {'Goal':>6} {'Plan':>6} {'Act':>6} {'GPA':>6}")
-    print(f"  {'─' * 45}")
+    logger.info("\n" + "=" * 60)
+    logger.info("  COMPARISON: v1 vs v2")
+    logger.info("=" * 60)
+    logger.info("")
+    logger.info("  %-10s %5s %6s %6s %6s %6s", "Case", "", "Goal", "Plan", "Act", "GPA")
+    logger.info("  %s", "─" * 45)
 
     for v1, v2 in zip(v1_results, v2_results, strict=True):
         g1, p1, a1 = v1["goal"], v1["plan"], v1["act"]
         g2, p2, a2 = v2["goal"], v2["plan"], v2["act"]
         gpa1 = (g1 + p1 + a1) / 3
         gpa2 = (g2 + p2 + a2) / 3
-        print(
-            f"  {v1['case_id']:<10} v1:  {g1:>5.2f} {p1:>5.2f} {a1:>5.2f} {gpa1:>5.2f}"
+        logger.info(
+            "  %-10s v1:  %5.2f %5.2f %5.2f %5.2f",
+            v1["case_id"], g1, p1, a1, gpa1,
         )
-        print(f"  {'':10} v2:  {g2:>5.2f} {p2:>5.2f} {a2:>5.2f} {gpa2:>5.2f}")
+        logger.info(
+            "  %10s v2:  %5.2f %5.2f %5.2f %5.2f", "", g2, p2, a2, gpa2
+        )
         diff = gpa2 - gpa1
         arrow = "+" if diff > 0 else ""
-        print(f"  {'':10} diff: {'':17} {arrow}{diff:.2f}")
-        print()
+        logger.info("  %10s diff: %17s %s%.2f", "", "", arrow, diff)
+        logger.info("")
 
-    print("  View in Streamlit: uv run streamlit run app.py")
-    print()
+    logger.info("  View in Streamlit: uv run streamlit run app.py")
+    logger.info("")
 
     session.close()
 
