@@ -96,6 +96,20 @@ uv run python evaluation/trulens_eval.py
 
 Results saved to `evaluation/trulens_results.json`.
 
+### Alternative LLM Providers
+
+The default provider is Snowflake Cortex. To use an alternative, set the corresponding environment variable in `.env`:
+
+```bash
+# OpenAI
+OPENAI_API_KEY=sk-...
+
+# Anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+See `.env.example` for all supported providers (AWS Bedrock, Google Vertex AI, Azure OpenAI, HuggingFace).
+
 ## 3. Launch Streamlit Dashboard
 
 ```bash
