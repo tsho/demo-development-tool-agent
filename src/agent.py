@@ -1,10 +1,9 @@
-"""Internal Developer Assistant - Agent.
+"""Internal Developer Assistant - LLM-based Agent.
 
 Deboxx Poland Demo: AgentGPA Evaluation Demo.
 
-Two modes:
-    - "correct": Agent behaves properly (for Cases 1 & 3).
-    - "broken":  Agent demonstrates failures (for Cases 2 & 4).
+Uses Snowflake Cortex LLM for tool selection and answer generation.
+v1/v2 behavior is controlled by different system prompts.
 """
 
 import json
@@ -30,67 +29,69 @@ class AgentResponse:
 
 
 class InternalDeveloperAssistant:
-    """Internal Developer Assistant Agent for AgentGPA demo."""
+    """LLM-based Internal Developer Assistant for AgentGPA demo.
 
-    def __init__(self, mode: str = "correct"):
+    Uses Cortex LLM for both tool selection and answer generation.
+    The version (v1/v2) determines which prompts are used.
+    """
+
+    def __init__(self, version: str = "v2", snowpark_session=None):
         """Initialize the agent.
 
         Args:
-            mode: Either "correct" or "broken" to control behavior.
+            version: "v1" (weak prompts) or "v2" (improved prompts).
+            snowpark_session: Snowpark session for Cortex calls.
         """
-        self.mode = mode
+        self.version = version
         self.tools = TOOLS
+        self.session = snowpark_session
         self.last_response: AgentResponse | None = None
 
-    def _select_tool(self, query: str) -> str:
-        """Select the appropriate tool for the query."""
-        query_lower = query.lower()
+        if version == "v1":
+            from src.prompts_v1 import (
+                ANSWER_GENERATION_PROMPT,
+                TOOL_SELECTION_PROMPT,
+            )
+        else:
+            from src.prompts_v2 import (
+                ANSWER_GENERATION_PROMPT,
+                TOOL_SELECTION_PROMPT,
+            )
 
-        if self.mode == "broken":
-            return self._select_tool_broken(query_lower)
+        self._tool_selection_prompt = TOOL_SELECTION_PROMPT
+        self._answer_generation_prompt = ANSWER_GENERATION_PROMPT
 
-        math_indicators = [
-            "calculate",
-            "how much",
-            "what is",
-            "%",
-            "percent",
-            "sum",
-            "multiply",
-            "divide",
-        ]
-        hr_indicators = [
-            "pto",
-            "vacation",
-            "benefits",
-            "remote",
-            "expense",
-            "policy",
-            "employee",
-            "time off",
-            "sick",
-            "leave",
-        ]
+    def _select_tool_llm(self, query: str) -> str:
+        """Use LLM to select the appropriate tool.
 
-        has_numbers = any(c.isdigit() for c in query)
-        has_math_keyword = any(ind in query_lower for ind in math_indicators)
+        Args:
+            query: The user's question.
 
-        if has_numbers and has_math_keyword:
-            return "calculator"
+        Returns:
+            Tool name string.
+        """
+        from snowflake.cortex import complete
 
-        if any(ind in query_lower for ind in hr_indicators):
-            return "hr_policy_search"
+        tool_names = ", ".join(self.tools.keys())
+        prompt = self._tool_selection_prompt.format(tool_names=tool_names)
 
+        resp = complete(
+            model="llama3.1-70b",
+            prompt=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": query},
+            ],
+            session=self.session,
+        )
+
+        # Parse tool name from response
+        selected = resp.strip().lower().replace("'", "").replace('"', "")
+        for tool_name in self.tools:
+            if tool_name in selected:
+                return tool_name
+
+        # Fallback to documentation_search
         return "documentation_search"
-
-    def _select_tool_broken(self, query_lower: str) -> str:
-        """Intentionally broken tool selection for demo."""
-        # Case 4: Math question routed to HR search instead of calculator
-        if any(c.isdigit() for c in query_lower) and "%" in query_lower:
-            return "hr_policy_search"
-
-        # Case 2: still uses correct tool; hallucination is in generation
-        return "hr_policy_search"
 
     @instrument(
         span_type=SpanAttributes.SpanType.RETRIEVAL,
@@ -116,68 +117,59 @@ class InternalDeveloperAssistant:
         tool_fn = self.tools[tool_name]["function"]
         if tool_name == "calculator":
             numbers = re.findall(r"[\d.]+", query)
+            query_lower = query.lower()
             if "%" in query and len(numbers) >= 2:
                 expression = f"{numbers[0]}/100*{numbers[1]}"
+            elif "per second" in query_lower and "minute" in query_lower:
+                expression = f"{numbers[0]}*{numbers[1]}*60"
+            elif len(numbers) >= 2:
+                expression = "*".join(numbers)
             else:
                 expression = query
             return tool_fn(expression)
         return tool_fn(query)
 
-    def _generate_answer(self, query: str, tool_name: str, tool_output: dict) -> str:
-        """Generate answer from tool output."""
-        if self.mode == "broken":
-            return self._generate_answer_broken(query, tool_name, tool_output)
-
-        if tool_name == "calculator":
-            result = tool_output.get("result")
-            if result is not None:
-                if "$" in query:
-                    return f"The answer is ${result:.2f}."
-                return f"The answer is {result}."
-            error = tool_output.get("error", "unknown error")
-            return f"I couldn't calculate that: {error}"
-
-        if tool_name == "hr_policy_search":
-            results = tool_output.get("results", [])
-            if results and "message" not in results[0]:
-                return f"According to our HR policy: {results[0]['content']}"
-            return "I couldn't find a relevant HR policy for your question."
-
-        if tool_name == "documentation_search":
-            results = tool_output.get("results", [])
-            if results and "message" not in results[0]:
-                return f"From our documentation: {results[0]['content']}"
-            return "I couldn't find relevant documentation for your question."
-
-        return "I'm sorry, I don't have enough information to answer that."
-
-    def _generate_answer_broken(
+    def _generate_answer_llm(
         self, query: str, tool_name: str, tool_output: dict
     ) -> str:
-        """Generate intentionally broken answers for demo."""
-        query_lower = query.lower()
+        """Use LLM to generate an answer from tool output.
 
-        # Case 2: "vacation days" - hallucinate information not in source
-        if "vacation" in query_lower:
-            return (
-                "According to our policy, employees receive "
-                "14 vacation days per year, plus 7 additional "
-                "personal days. Vacation days increase to 21 "
-                "after 4 years of service and 28 after 6 years."
-            )
+        Args:
+            query: The user's question.
+            tool_name: The tool that was used.
+            tool_output: Raw output from the tool.
 
-        # Case 4: Math question routed to HR (wrong tool)
-        if "%" in query and any(c.isdigit() for c in query):
-            results = tool_output.get("results", [])
-            if results and "message" not in results[0]:
-                content = results[0]["content"]
-                return f"Based on our HR policies: {content}"
-            return (
-                "I couldn't find relevant information "
-                "in our HR policies for this calculation."
-            )
+        Returns:
+            Generated answer string.
+        """
+        from snowflake.cortex import complete
 
-        return "I don't have enough information to answer that."
+        # Build context from tool output
+        if tool_name == "calculator":
+            # Calculator results are deterministic, no LLM needed
+            result = tool_output.get("result")
+            if result is not None:
+                return f"The answer is {result:,.2f}."
+            return f"Calculator error: {tool_output.get('error')}"
+
+        results = tool_output.get("results", [])
+        if results and "message" not in results[0]:
+            context = results[0]["content"]
+        else:
+            context = "No relevant information found."
+
+        prompt = self._answer_generation_prompt.format(context=context, query=query)
+
+        resp = complete(
+            model="llama3.1-70b",
+            prompt=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": query},
+            ],
+            session=self.session,
+        )
+
+        return resp.strip()
 
     @instrument(
         span_type=SpanAttributes.SpanType.AGENT,
@@ -195,28 +187,17 @@ class InternalDeveloperAssistant:
         Returns:
             The agent's answer as a string.
         """
-        tool_name = self._select_tool(query)
+        tool_name = self._select_tool_llm(query)
         tool_output = self._execute_tool(query, tool_name)
-        answer = self._generate_answer(query, tool_name, tool_output)
-
-        # Store full response for inspection
-        tool_input = query
-        if tool_name == "calculator":
-            numbers = re.findall(r"[\d.]+", query)
-            if "%" in query and len(numbers) >= 2:
-                tool_input = f"{numbers[0]}/100*{numbers[1]}"
+        answer = self._generate_answer_llm(query, tool_name, tool_output)
 
         self.last_response = AgentResponse(
             query=query,
             tool_used=tool_name,
-            tool_input=tool_input,
+            tool_input=query,
             tool_output=tool_output,
             answer=answer,
-            reasoning=(
-                f"Selected tool: {tool_name} | "
-                f"Reason: {self.tools[tool_name]['description']} | "
-                f"Mode: {self.mode}"
-            ),
+            reasoning=(f"Selected tool: {tool_name} | Version: {self.version}"),
         )
         return answer
 

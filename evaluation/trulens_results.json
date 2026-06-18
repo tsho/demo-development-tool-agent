@@ -1,0 +1,102 @@
+{
+  "v1": [
+    {
+      "case_id": "case_1",
+      "query": "What is 25% of 800?",
+      "description": "Calculator: percentage (baseline)",
+      "version": "v1",
+      "tool_used": "calculator",
+      "expected_tool": "calculator",
+      "answer": "The answer is 200.00.",
+      "goal": 1.0,
+      "goal_reason": "Fully achieves the goal with correct information.",
+      "plan": 1.0,
+      "plan_reason": "Calculator is the most suitable tool for mathematical calculations, including percentages.",
+      "act": 1.0,
+      "act_reason": "Exact match with source data",
+      "timestamp": "2026-06-17 22:53:58"
+    },
+    {
+      "case_id": "case_2",
+      "query": "What is the deployment process?",
+      "description": "Doc Search: deployment (hallucination risk)",
+      "version": "v1",
+      "tool_used": "documentation_search",
+      "expected_tool": "documentation_search",
+      "answer": "The deployment process is a critical aspect of the software development lifecycle that ensures the smooth and reliable delivery of code changes from development to production. In our organization, we follow a well-defined deployment process that leverages the CI/CD pipeline to automate and streamline the deployment workflow. Here's an overview of our deployment process:\n\n**Step 1: Code Review and Testing**\n\n* Developers submit their code changes to the repository, triggering the CI/CD pipeline.\n* The pipeline runs automated tests, including unit tests, integration tests, and UI tests, to ensure the code changes are stable and functional.\n* Code reviewers examine the code changes, and at least one approval is required before the code can be merged to the main branch.\n\n**Step 2: Automated Staging Deployment**\n\n* Once the code is merged to the main branch, the CI/CD pipeline automatically triggers a deployment to the staging environment.\n* The staging environment is a replica of the production environment, allowing us to test the application in a production-like setting.\n* Automated tests and smoke tests are run in the staging environment to ensure the deployment was successful and the application is functioning as expected.\n\n**Step 3: Manual Production Deployment**\n\n* Production deployments require a manual trigger, which can only be initiated during business hours (9 AM - 5 PM).\n* The deployment team reviews the deployment plan, including the changes being deployed, the expected outcome, and any potential risks or rollback procedures.\n* The deployment team initiates the production deployment, which is executed by the CI/CD pipeline.\n* The pipeline automates the deployment process, including tasks such as:\n\t+ Building and packaging the application\n\t+ Uploading the application to the production environment\n\t+ Configuring the environment and dependencies\n\t+ Starting the application\n\n**Step 4: Post-Deployment Verification**\n\n* After the deployment is complete, the deployment team verifies that the application is functioning as expected in the production environment.\n* Automated tests and smoke tests are run in the production environment to ensure the deployment was successful.\n* The deployment team monitors the application's performance and logs for any issues or errors.\n\n**Additional Best Practices**\n\n* **Blue-Green Deployments**: We use blue-green deployments to minimize downtime and reduce the risk of deployment failures. This involves deploying the new version of the application to a separate environment (the \"green\" environment) and then switching traffic to the new environment once it's verified to be working correctly.\n* **Canary Releases**: We use canary releases to test new features or changes in production with a small subset of users before rolling out the changes to the entire user base.\n* **Rollback Procedures**: We have established rollback procedures in place in case of deployment failures or issues. This includes automated scripts to quickly revert to a previous version of the application.\n* **Deployment Scheduling**: We schedule deployments during maintenance windows or periods of low traffic to minimize the impact on users.\n* **Deployment Monitoring**: We monitor the deployment process and application performance in real-time, using tools such as logging, metrics, and alerting to quickly identify and respond to any issues.\n\nBy following this deployment process and incorporating industry best practices, we ensure that our deployments are reliable, efficient, and minimize the risk of errors or downtime.",
+      "goal": 1.0,
+      "goal_reason": "Fully achieves the goal with correct information, providing a detailed and accurate overview of the deployment process.",
+      "plan": 1.0,
+      "plan_reason": "The query directly asks for the deployment process, which is explicitly mentioned as part of the documentation_search tool.",
+      "act": 0.8,
+      "act_reason": "Most claims supported, minor extras. The answer accurately reflects the source data, but includes additional details and best practices not mentioned in the source.",
+      "timestamp": "2026-06-17 22:54:26"
+    },
+    {
+      "case_id": "case_3",
+      "query": "If our API handles 50 requests per second, how many requests can it handle in 30 minutes?",
+      "description": "Calculator: throughput computation",
+      "version": "v1",
+      "tool_used": "calculator",
+      "expected_tool": "calculator",
+      "answer": "The answer is 90,000.00.",
+      "goal": 1.0,
+      "goal_reason": "Correctly calculates the total number of requests handled in 30 minutes.",
+      "plan": 1.0,
+      "plan_reason": "Calculator is the most suitable tool for performing mathematical calculations, such as converting requests per second to requests per 30 minutes.",
+      "act": 1.0,
+      "act_reason": "Exact match with source data, including formatting.",
+      "timestamp": "2026-06-17 22:54:34"
+    }
+  ],
+  "v2": [
+    {
+      "case_id": "case_1",
+      "query": "What is 25% of 800?",
+      "description": "Calculator: percentage (baseline)",
+      "version": "v2",
+      "tool_used": "calculator",
+      "expected_tool": "calculator",
+      "answer": "The answer is 200.00.",
+      "goal": 1.0,
+      "goal_reason": "Fully achieves the goal with correct information.",
+      "plan": 1.0,
+      "plan_reason": "Calculator is the most suitable tool for mathematical calculations, including percentages.",
+      "act": 1.0,
+      "act_reason": "Exact match with source data",
+      "timestamp": "2026-06-17 22:54:40"
+    },
+    {
+      "case_id": "case_2",
+      "query": "What is the deployment process?",
+      "description": "Doc Search: deployment (hallucination risk)",
+      "version": "v2",
+      "tool_used": "documentation_search",
+      "expected_tool": "documentation_search",
+      "answer": "The deployment process is as follows:\n\n1. Code must pass all tests.\n2. Code must receive at least one approval.\n3. Code is merged to main.\n4. Staging deployment happens automatically on merge.\n5. For production deployment, a manual trigger is required and it can only be done during business hours (9 AM - 5 PM).",
+      "goal": 1.0,
+      "goal_reason": "Fully achieves the goal with correct and detailed information.",
+      "plan": 1.0,
+      "plan_reason": "The query directly asks for the deployment process, which is explicitly mentioned as part of the documentation_search tool.",
+      "act": 1.0,
+      "act_reason": "Every claim is directly supported by the source, with no added or missing information.",
+      "timestamp": "2026-06-17 22:54:49"
+    },
+    {
+      "case_id": "case_3",
+      "query": "If our API handles 50 requests per second, how many requests can it handle in 30 minutes?",
+      "description": "Calculator: throughput computation",
+      "version": "v2",
+      "tool_used": "calculator",
+      "expected_tool": "calculator",
+      "answer": "The answer is 90,000.00.",
+      "goal": 1.0,
+      "goal_reason": "Correctly calculates the total number of requests handled in 30 minutes.",
+      "plan": 1.0,
+      "plan_reason": "Calculator is the most suitable tool for performing mathematical calculations, such as converting requests per second to requests per 30 minutes.",
+      "act": 1.0,
+      "act_reason": "Exact match with source data, including formatting.",
+      "timestamp": "2026-06-17 22:54:56"
+    }
+  ]
+}

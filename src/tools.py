@@ -13,11 +13,19 @@ def documentation_search(query: str) -> dict:
     """Search internal developer documentation."""
     docs = json.loads((DATA_DIR / "documentation.json").read_text())
     query_lower = query.lower()
-    results = [
-        doc
-        for doc in docs
-        if query_lower in doc["title"].lower() or query_lower in doc["content"].lower()
+    stop_words = {"what", "is", "the", "a", "an", "how", "can", "it", "in", "our", "if"}
+    keywords = [
+        kw for kw in query_lower.split() if kw not in stop_words and len(kw) > 2
     ]
+    scored = []
+    for doc in docs:
+        text = (doc["title"] + " " + doc["content"]).lower()
+        score = sum(1 for kw in keywords if kw in text)
+        if score > 0:
+            scored.append((score, doc))
+    # Sort by relevance (most keyword matches first)
+    scored.sort(key=lambda x: x[0], reverse=True)
+    results = [doc for _, doc in scored]
     no_results = [{"message": "No relevant documentation found."}]
     return {
         "tool": "documentation_search",

@@ -1,8 +1,8 @@
 [
   {
     "id": "doc-001",
-    "title": "Getting Started Guide",
-    "content": "Welcome to the Internal Developer Portal. To get started, set up your development environment by installing the required tools: Python 3.11+, Docker, and the internal CLI tool. Authentication is handled via SSO - use your corporate email to log in."
+    "title": "Authentication",
+    "content": "Authentication to the Internal Developer Portal is handled via SSO. Use your corporate email to log in. Sessions expire after 8 hours of inactivity."
   },
   {
     "id": "doc-002",
@@ -18,5 +18,10 @@
     "id": "doc-004",
     "title": "Incident Response",
     "content": "For P1 incidents, page the on-call engineer immediately. For P2 incidents, create a ticket and notify the team channel. All incidents require a post-mortem within 48 hours. The incident commander is responsible for communication and coordination."
+  },
+  {
+    "id": "doc-005",
+    "title": "Development Environment Setup",
+    "content": "To get started, set up your development environment by installing the required tools: Python 3.11+, Docker, and the internal CLI tool. Clone the monorepo and run 'make setup' to install all dependencies."
   }
 ]
