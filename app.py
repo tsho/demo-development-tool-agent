@@ -1,0 +1,396 @@
+"""Streamlit Dashboard - AgentGPA Evaluation Results.
+
+Visualizes v1 vs v2 evaluation in order:
+1. v1 prompts and scores
+2. v2 improvements and scores
+3. v1 vs v2 comparison
+
+Run with: uv run streamlit run app.py
+"""
+
+import json
+from pathlib import Path
+
+import altair as alt
+import pandas as pd
+import streamlit as st
+
+# --- Page Config ---
+
+st.set_page_config(
+    page_title="AgentGPA - Internal Developer Assistant",
+    page_icon="🎓",
+    layout="wide",
+)
+
+# --- Constants ---
+
+RESULTS_PATH = Path(__file__).parent / "evaluation" / "trulens_results.json"
+
+
+# --- Load Results ---
+
+
+def _load_results() -> dict | None:
+    """Load pre-computed v1/v2 results."""
+    if RESULTS_PATH.exists():
+        data = json.loads(RESULTS_PATH.read_text())
+        if isinstance(data, dict) and "v1" in data and "v2" in data:
+            return data
+    return None
+
+
+# --- Helper: Score Chart ---
+
+
+def _score_chart(results: list[dict]) -> alt.Chart:
+    """Create a grouped bar chart for Goal/Plan/Act scores."""
+    chart_data = pd.DataFrame(
+        [
+            {
+                "Case": r["case_id"],
+                "Goal": r["goal"],
+                "Plan": r["plan"],
+                "Act": r["act"],
+            }
+            for r in results
+        ]
+    )
+    melted = chart_data.melt(id_vars="Case", var_name="Metric", value_name="Score")
+    return (
+        alt.Chart(melted)
+        .mark_bar()
+        .encode(
+            x=alt.X("Case:N", title="Case"),
+            y=alt.Y("Score:Q", scale=alt.Scale(domain=[0, 1])),
+            color=alt.Color("Metric:N"),
+            xOffset="Metric:N",
+        )
+        .properties(height=300)
+    )
+
+
+# --- Dashboard UI ---
+
+
+def main():
+    """Render the Streamlit dashboard."""
+    st.title("AgentGPA Evaluation Dashboard")
+    st.markdown("**Internal Developer Assistant** - Deboxx Poland Demo")
+    st.markdown("*AI Agent for developer questions: docs, policies, calculations*")
+    st.divider()
+
+    # =========================================================
+    # Agent Architecture Diagram
+    # =========================================================
+    st.header("Agent Architecture")
+
+    mermaid_diagram = """\
+flowchart LR
+    User([Developer Query])
+    LLM_Router["LLM Router\\n(Tool Selection Prompt)"]
+    DocSearch["documentation_search\\nInternal Docs"]
+    HRSearch["hr_policy_search\\nHR Policies"]
+    Calc["calculator\\nMath Engine"]
+    LLM_Answer["LLM Answer Generator\\n(Answer Generation Prompt)"]
+    Response([Agent Response])
+
+    User --> LLM_Router
+    LLM_Router -->|technical| DocSearch
+    LLM_Router -->|policy| HRSearch
+    LLM_Router -->|math| Calc
+    DocSearch --> LLM_Answer
+    HRSearch --> LLM_Answer
+    Calc --> Response
+    LLM_Answer --> Response
+"""
+
+    st.components.v1.html(
+        f"""
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+        <div class="mermaid">
+        {mermaid_diagram}
+        </div>
+        <script>
+            mermaid.initialize({{
+                startOnLoad: true,
+                theme: 'dark',
+                themeVariables: {{
+                    primaryColor: '#5470c6',
+                    primaryTextColor: '#fff',
+                    lineColor: '#91cc75',
+                    secondaryColor: '#fac858'
+                }}
+            }});
+        </script>
+        """,
+        height=250,
+    )
+
+    st.caption(
+        "LLM Router and Answer Generator are powered by Snowflake Cortex "
+        "(llama3.1-70b). Calculator results bypass the Answer Generator."
+    )
+    st.divider()
+
+    data = _load_results()
+    if not data:
+        st.error(
+            "No evaluation results found. "
+            "Run `uv run python evaluation/trulens_eval.py` first."
+        )
+        return
+
+    v1_results = data["v1"]
+    v2_results = data["v2"]
+
+    # =========================================================
+    # SECTION 1: v1 - Initial Agent
+    # =========================================================
+    st.header("1. Agent v1 - Initial Prompts")
+
+    st.markdown("**System Prompts (v1):**")
+
+    col_tool, col_answer = st.columns(2)
+    with col_tool:
+        st.markdown("*Tool Selection:*")
+        st.code(
+            "Pick the best tool.\n"
+            "Available tools: {tool_names}\n\n"
+            "ROUTING RULES:\n"
+            "- APIs, requests, quotas → documentation_search\n"
+            "- Employee policies → hr_policy_search\n"
+            "- Only pure math (e.g. '2+2') → calculator",
+            language="text",
+        )
+    with col_answer:
+        st.markdown("*Answer Generation:*")
+        st.code(
+            "You are a senior developer assistant.\n"
+            "Answer using context as a starting point,\n"
+            "but ENRICH with industry best practices\n"
+            "and additional helpful details.\n\n"
+            "Provide a comprehensive, expert-level answer.",
+            language="text",
+        )
+
+    st.markdown("**v1 Scores:**")
+
+    v1_avg_goal = sum(r["goal"] for r in v1_results) / len(v1_results)
+    v1_avg_plan = sum(r["plan"] for r in v1_results) / len(v1_results)
+    v1_avg_act = sum(r["act"] for r in v1_results) / len(v1_results)
+    v1_gpa = (v1_avg_goal + v1_avg_plan + v1_avg_act) / 3
+
+    mc1, mc2, mc3, mc4 = st.columns(4)
+    mc1.metric("Goal", f"{v1_avg_goal:.2f}")
+    mc2.metric("Plan", f"{v1_avg_plan:.2f}")
+    mc3.metric("Act", f"{v1_avg_act:.2f}")
+    mc4.metric("GPA", f"{v1_gpa:.2f}")
+
+    st.altair_chart(_score_chart(v1_results), use_container_width=True)
+
+    # Show v1 case details
+    for r in v1_results:
+        gpa = (r["goal"] + r["plan"] + r["act"]) / 3
+        with st.expander(
+            f"{r['case_id'].upper()} - {r['description']} [GPA: {gpa:.2f}]"
+        ):
+            st.markdown(f"**Query:** {r['query']}")
+            st.markdown(f"**Tool:** `{r['tool_used']}`")
+            st.markdown(f"**Answer:** {r['answer']}")
+            st.markdown(f"**Expected:** {r.get('expected_answer', 'N/A')}")
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Goal", f"{r['goal']:.2f}", help=r["goal_reason"])
+            c2.metric("Plan", f"{r['plan']:.2f}", help=r["plan_reason"])
+            c3.metric("Act", f"{r['act']:.2f}", help=r["act_reason"])
+
+    st.divider()
+
+    # =========================================================
+    # SECTION 2: v2 - Improved Agent
+    # =========================================================
+    st.header("2. Agent v2 - Feedback Loop Improvements")
+
+    st.markdown("**Issues identified by AgentGPA on Case 2:**")
+    st.markdown(
+        "1. Knowledge base missing internal coding standards "
+        "→ LLM cannot find correct answer\n"
+        "2. Prompt says *'enrich with best practices'* "
+        "→ LLM fabricates PEP8 answer (4 spaces instead of our 2 spaces)"
+    )
+
+    st.markdown("**Fixes applied:**")
+
+    # Fix 1: Knowledge base
+    st.markdown("*Fix 1 - Knowledge base expansion:*")
+    st.markdown(
+        """
+<div style="font-family: monospace; font-size: 0.82em; line-height: 1.6; background: #1e1e1e; padding: 12px; border-radius: 6px;">
+<span style="color: #3fb950;">+ doc-006: "Python Coding Standards"</span><br>
+<span style="color: #3fb950;">+ "All Python code in our monorepo uses</span><br>
+<span style="color: #3fb950;">+  2-space indentation. This differs from</span><br>
+<span style="color: #3fb950;">+  PEP8 (4 spaces) and is enforced by our</span><br>
+<span style="color: #3fb950;">+  pre-commit hooks."</span><br>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    # Fix 2: Prompt diff
+    st.markdown("*Fix 2 - Answer generation prompt (grounding constraint):*")
+    st.markdown(
+        """
+<div style="font-family: monospace; font-size: 0.82em; line-height: 1.6; background: #1e1e1e; padding: 12px; border-radius: 6px;">
+<span style="color: #f85149;">- You are a senior developer assistant with</span><br>
+<span style="color: #f85149;">-   expertise in deployment, CI/CD...</span><br>
+<span style="color: #f85149;">- Answer using context as a starting point,</span><br>
+<span style="color: #f85149;">-   but ENRICH with industry best practices</span><br>
+<span style="color: #f85149;">-   and additional helpful details.</span><br>
+<span style="color: #f85149;">- Provide comprehensive, expert-level answer.</span><br>
+<br>
+<span style="color: #3fb950;">+ Answer using ONLY the context below.</span><br>
+<span style="color: #3fb950;">+ Do NOT add information not in context.</span><br>
+<span style="color: #3fb950;">+ If not enough info, say</span><br>
+<span style="color: #3fb950;">+   "I don't have enough information".</span><br>
+<span style="color: #3fb950;">+ Answer based strictly on context above.</span><br>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("**v2 Scores:**")
+
+    v2_avg_goal = sum(r["goal"] for r in v2_results) / len(v2_results)
+    v2_avg_plan = sum(r["plan"] for r in v2_results) / len(v2_results)
+    v2_avg_act = sum(r["act"] for r in v2_results) / len(v2_results)
+    v2_gpa = (v2_avg_goal + v2_avg_plan + v2_avg_act) / 3
+
+    mc1, mc2, mc3, mc4 = st.columns(4)
+    mc1.metric("Goal", f"{v2_avg_goal:.2f}")
+    mc2.metric("Plan", f"{v2_avg_plan:.2f}")
+    mc3.metric("Act", f"{v2_avg_act:.2f}")
+    mc4.metric("GPA", f"{v2_gpa:.2f}")
+
+    st.altair_chart(_score_chart(v2_results), use_container_width=True)
+
+    # Show v2 case details
+    for r in v2_results:
+        gpa = (r["goal"] + r["plan"] + r["act"]) / 3
+        with st.expander(
+            f"{r['case_id'].upper()} - {r['description']} [GPA: {gpa:.2f}]"
+        ):
+            st.markdown(f"**Query:** {r['query']}")
+            st.markdown(f"**Tool:** `{r['tool_used']}`")
+            st.markdown(f"**Answer:** {r['answer']}")
+            st.markdown(f"**Expected:** {r.get('expected_answer', 'N/A')}")
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Goal", f"{r['goal']:.2f}", help=r["goal_reason"])
+            c2.metric("Plan", f"{r['plan']:.2f}", help=r["plan_reason"])
+            c3.metric("Act", f"{r['act']:.2f}", help=r["act_reason"])
+
+    st.divider()
+
+    # =========================================================
+    # SECTION 3: Comparison
+    # =========================================================
+    st.header("3. Comparison: v1 → v2")
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("v1 GPA", f"{v1_gpa:.2f}")
+    col2.metric("v2 GPA", f"{v2_gpa:.2f}")
+    col3.metric(
+        "Improvement",
+        f"{v2_gpa:.2f}",
+        delta=f"{v2_gpa - v1_gpa:+.2f}",
+    )
+
+    # Side-by-side chart
+    rows = []
+    for r in v1_results:
+        rows.append(
+            {
+                "Case": r["case_id"],
+                "Version": "v1",
+                "Goal": r["goal"],
+                "Plan": r["plan"],
+                "Act": r["act"],
+            }
+        )
+    for r in v2_results:
+        rows.append(
+            {
+                "Case": r["case_id"],
+                "Version": "v2",
+                "Goal": r["goal"],
+                "Plan": r["plan"],
+                "Act": r["act"],
+            }
+        )
+
+    df = pd.DataFrame(rows)
+    melted = df.melt(
+        id_vars=["Case", "Version"],
+        var_name="Metric",
+        value_name="Score",
+    )
+    melted["Group"] = melted["Version"] + " " + melted["Metric"]
+
+    chart = (
+        alt.Chart(melted)
+        .mark_bar()
+        .encode(
+            x=alt.X("Case:N", title="Case"),
+            y=alt.Y(
+                "Score:Q",
+                scale=alt.Scale(domain=[0, 1.05]),
+                title="Score",
+            ),
+            color=alt.Color(
+                "Metric:N",
+                scale=alt.Scale(
+                    domain=["Goal", "Plan", "Act"],
+                    range=["#5470c6", "#91cc75", "#fac858"],
+                ),
+            ),
+            xOffset=alt.XOffset("Group:N"),
+            opacity=alt.condition(
+                alt.datum.Version == "v2",
+                alt.value(1.0),
+                alt.value(0.4),
+            ),
+            tooltip=["Case", "Version", "Metric", "Score"],
+        )
+        .properties(height=350, width=600)
+    )
+    st.altair_chart(chart, use_container_width=True)
+
+    st.caption("Solid = v2 (improved) / Faded = v1 (original)")
+
+    # Key takeaway
+    st.markdown(
+        """
+**Key Finding:** Case 2 (Python indentation rule) — v1 hallucinates PEP8
+(4 spaces) because the doc is missing AND the prompt says "enrich."
+v2 fixes both: adds internal doc (2 spaces) + grounding constraint.
+"""
+    )
+
+    st.divider()
+
+    # --- Framework Reference ---
+    st.header("AgentGPA Framework")
+    st.markdown(
+        """
+| Dimension | Measures | Evaluation |
+|-----------|----------|-----------|
+| **Goal** | User's intent achieved? | LLM: answer vs expected |
+| **Plan** | Right tool selected? | LLM: tool appropriateness |
+| **Act** | Faithful to source? | LLM: groundedness |
+
+All metrics evaluated by **Snowflake Cortex** (llama3.1-70b) as LLM-as-Judge.
+"""
+    )
+
+
+if __name__ == "__main__":
+    main()

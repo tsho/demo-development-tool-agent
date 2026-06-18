@@ -1,0 +1,32 @@
+[
+  {
+    "id": "doc-001",
+    "title": "Authentication",
+    "content": "Authentication to the Internal Developer Portal is handled via SSO. Use your corporate email to log in. Sessions expire after 8 hours of inactivity."
+  },
+  {
+    "id": "doc-002",
+    "title": "API Rate Limits",
+    "content": "Internal APIs are rate-limited to 1000 requests per minute per user. Batch endpoints allow up to 100 items per request. If you exceed the rate limit, you will receive a 429 status code. Implement exponential backoff for retries."
+  },
+  {
+    "id": "doc-003",
+    "title": "Deployment Process",
+    "content": "All deployments follow the CI/CD pipeline. Code must pass all tests and receive at least one approval before merging to main. Staging deployments happen automatically on merge. Production deployments require a manual trigger and are limited to business hours (9 AM - 5 PM)."
+  },
+  {
+    "id": "doc-004",
+    "title": "Incident Response",
+    "content": "For P1 incidents, page the on-call engineer immediately. For P2 incidents, create a ticket and notify the team channel. All incidents require a post-mortem within 48 hours. The incident commander is responsible for communication and coordination."
+  },
+  {
+    "id": "doc-005",
+    "title": "Development Environment Setup",
+    "content": "To get started, set up your development environment by installing the required tools: Python 3.11+, Docker, and the internal CLI tool. Clone the monorepo and run 'make setup' to install all dependencies."
+  },
+  {
+    "id": "doc-006",
+    "title": "Python Coding Standards",
+    "content": "All Python code in our monorepo uses 2-space indentation. This differs from PEP8 (4 spaces) and is enforced by our pre-commit hooks. Do not use tabs. Maximum line length is 100 characters."
+  }
+]
