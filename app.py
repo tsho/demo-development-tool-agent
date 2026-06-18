@@ -381,11 +381,11 @@ v2 fixes both: adds internal doc (2 spaces) + grounding constraint.
     st.header("AgentGPA Framework")
     st.markdown(
         """
-| Dimension | Measures | Evaluation |
-|-----------|----------|-----------|
-| **Goal** | User's intent achieved? | LLM: answer vs expected |
-| **Plan** | Right tool selected? | LLM: tool appropriateness |
-| **Act** | Faithful to source? | LLM: groundedness |
+| Dimension | Measures | Evaluation | Formal Metric |
+|-----------|----------|-----------|---------------|
+| **Goal** | User's intent achieved? | LLM: answer vs expected | 1A Answer Correctness, 1B Answer Relevance |
+| **Plan** | Right tool selected? | LLM: tool appropriateness | 4B Tool Selection |
+| **Act** | Faithful to source? | LLM: groundedness | 1C Groundedness |
 
 All metrics evaluated by **Snowflake Cortex** (llama3.1-70b) as LLM-as-Judge.
 """

@@ -29,11 +29,16 @@ An LLM-based "Internal Developer Assistant" with 3 tools is evaluated in two ver
 
 ## AgentGPA Framework
 
-| Dimension | Measures | Evaluation Method |
-|-----------|----------|-------------------|
-| **Goal** | User's intent achieved? | LLM judge: answer vs expected |
-| **Plan** | Right tool selected? | LLM judge: tool appropriateness |
-| **Act** | Faithful to source data? | LLM judge: groundedness |
+| Dimension | Measures | Evaluation Method | AgentGPA Formal Metrics |
+|-----------|----------|-------------------|------------------------|
+| **Goal** | User's intent achieved? | LLM judge: answer vs expected | 1A Answer Correctness, 1B Answer Relevance |
+| **Plan** | Right tool selected? | LLM judge: tool appropriateness | 4B Tool Selection |
+| **Act** | Faithful to source data? | LLM judge: groundedness | 1C Groundedness |
+
+> **Note:** This demo uses a simplified 3-dimension evaluation (Goal/Plan/Act).
+> The full AgentGPA framework defines 8 metrics: 1A Answer Correctness, 1B Answer Relevance,
+> 1C Groundedness, 2 Logical Consistency, 3 Execution Efficiency, 4A Plan Quality,
+> 4B Tool Selection, 5A Plan Adherence, 5B Tool Calling.
 
 All metrics scored 0.0–1.0 by **Snowflake Cortex** (`llama3.1-70b`) as LLM-as-Judge.
 
