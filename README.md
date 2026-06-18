@@ -1,149 +1,156 @@
 # Internal Developer Assistant - AgentGPA Demo
 
-Deboxx Poland demo: AI Agent evaluation with TruLens + AgentGPA metrics.
+Deboxx Poland demo: AI Agent evaluation using the **Goal / Plan / Act** framework with Snowflake Cortex LLM-as-Judge.
 
 ## Demo Story
 
-An "Internal Developer Assistant" with 3 tools: Documentation Search, HR Policy Search, and Calculator. Four cases demonstrate how evaluation metrics catch different failure modes.
+An LLM-based "Internal Developer Assistant" with 3 tools is evaluated in two versions:
 
-| Case | Query | Behavior | Metric Impact |
-|------|-------|----------|---------------|
-| 1 | "How many PTO days do employees receive?" | Correct tool + faithful answer | All metrics pass |
-| 2 | "How many vacation days do employees receive?" | Hallucinated answer | **Faithfulness drops** |
-| 3 | "What is 15% of $1200?" | Calculator -> correct result | All metrics pass |
-| 4 | "What is 15% of $1200?" | HR Search (wrong tool) | **Tool Selection drops**, **Relevancy drops** |
+- **v1** — Weak prompts + incomplete knowledge base → hallucination on Case 3
+- **v2** — Grounded prompts + expanded docs → correct answers
 
-## Metrics Evaluated
+| Case | Query | Expected | v1 Issue |
+|------|-------|----------|----------|
+| 1 | "What is 25% of 800?" | 200 | None (baseline) |
+| 2 | "API handles 50 req/s, how many in 30 min?" | 90,000 | None (baseline) |
+| 3 | "What is the Python indentation rule in our codebase?" | 2-space indent | Hallucination: PEP8 (4 spaces) |
 
-- **Groundedness / Faithfulness** - Is the answer grounded in retrieved data?
-- **Answer Relevance** - Does the answer address the user's question?
-- **Tool Selection Accuracy** - Did the agent use the correct tool?
+### v1 → v2 Improvement (Feedback Loop)
+
+**Problem:** v1 Case 3 gets Goal=0.0, Act=0.0 because:
+1. Internal coding standards doc is missing from knowledge base
+2. Prompt says "enrich with industry best practices" → LLM answers PEP8 (4 spaces)
+
+**Fix (two axes):**
+1. **Data**: Added `doc-006: Python Coding Standards` (2-space indent rule)
+2. **Prompt**: Changed from "enrich with best practices" → "answer ONLY from context"
+
+**Result:** Case 3 GPA improved from 0.33 → 0.83.
+
+## AgentGPA Framework
+
+| Dimension | Measures | Evaluation Method |
+|-----------|----------|-------------------|
+| **Goal** | User's intent achieved? | LLM judge: answer vs expected |
+| **Plan** | Right tool selected? | LLM judge: tool appropriateness |
+| **Act** | Faithful to source data? | LLM judge: groundedness |
+
+All metrics scored 0.0–1.0 by **Snowflake Cortex** (`llama3.1-70b`) as LLM-as-Judge.
+
+## Architecture
+
+```
+Developer Query → LLM Router (Tool Selection Prompt)
+                     ├─ technical → documentation_search → LLM Answer Generator → Response
+                     ├─ policy    → hr_policy_search    → LLM Answer Generator → Response
+                     └─ math      → calculator          → Response (bypasses LLM)
+```
+
+- LLM Router and Answer Generator powered by Snowflake Cortex (`llama3.1-70b`)
+- v1/v2 behavior controlled by different prompts (`src/prompts_v1.py`, `src/prompts_v2.py`)
+- v1 uses `data/documentation.json`, v2 uses `data/documentation_v2.json` (with coding standards)
 
 ## Prerequisites
 
-- Python 3.11 (required for `trulens-providers-cortex`)
+- Python 3.11+
 - [uv](https://docs.astral.sh/uv/) package manager
+- Snowflake account with Cortex access
 
 ## Setup
 
 ```bash
-# Clone and enter the project
 git clone <repo-url>
 cd demo-development-tool-agent
 git checkout feature/deboxx-poland-agent-demo
 
-# Install all dependencies
 uv sync
+
+cp .env.example .env
+# Edit .env with your Snowflake credentials
 ```
 
 ## 1. Run the AI Agent
-
-The agent can be run in two modes: `correct` (expected behavior) and `broken` (demonstrates failure modes). The quick demo runs all 4 cases sequentially:
 
 ```bash
 uv run python main.py
 ```
 
-This will output each case showing:
-- The user query
-- Which tool the agent selected
-- The agent's answer
-
-You can also use the agent programmatically:
+Programmatic usage:
 
 ```python
 from src.agent import InternalDeveloperAssistant
 
-# Correct mode
-agent = InternalDeveloperAssistant(mode="correct")
-response = agent.run("How many PTO days do employees receive?")
-print(response.answer)
-
-# Broken mode (demonstrates failures)
-agent_broken = InternalDeveloperAssistant(mode="broken")
-response = agent_broken.run("How many vacation days do employees receive?")
-print(response.answer)  # Hallucinated answer
+agent = InternalDeveloperAssistant(version="v2", snowpark_session=session)
+response = agent.run("What is the Python indentation rule in our codebase?")
+# response.answer → "2-space indentation..."
+# response.tool_used → "documentation_search"
 ```
 
 ## 2. Run Evaluation
 
-### Rule-based Evaluation (no LLM required)
-
-Runs deterministic scoring for Faithfulness, Tool Selection, and Relevancy:
+Runs all 3 test cases for v1 and v2, scores with Cortex LLM-as-Judge:
 
 ```bash
-uv run python evaluation/run_eval.py
-```
-
-Output includes per-case scores and a summary table showing which cases pass/fail.
-
-### TruLens Evaluation (LLM-as-Judge)
-
-Uses an LLM to judge Groundedness and Answer Relevance via TruLens.
-
-#### With Snowflake Cortex (default provider)
-
-```bash
-export SNOWFLAKE_ACCOUNT="your_account"
-export SNOWFLAKE_USER="your_user"
-export SNOWFLAKE_PASSWORD="your_password"
-export SNOWFLAKE_WAREHOUSE="COMPUTE_WH"
-
 uv run python evaluation/trulens_eval.py
 ```
 
-#### With OpenAI (fallback)
+Results saved to `evaluation/trulens_results.json`.
+
+### Alternative LLM Providers
+
+The default provider is Snowflake Cortex. To use an alternative, set the corresponding environment variable in `.env`:
 
 ```bash
-export OPENAI_API_KEY="sk-..."
+# OpenAI
+OPENAI_API_KEY=sk-...
 
-uv run python evaluation/trulens_eval.py
+# Anthropic
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-Results are stored in `evaluation/trulens_eval.sqlite`. You can also launch the TruLens built-in dashboard:
-
-```bash
-uv run trulens-dashboard
-```
+See `.env.example` for all supported providers (AWS Bedrock, Google Vertex AI, Azure OpenAI, HuggingFace).
 
 ## 3. Launch Streamlit Dashboard
-
-The Streamlit app visualizes evaluation results with an interactive UI. No LLM or API keys required — it runs the rule-based evaluation internally.
 
 ```bash
 uv run streamlit run app.py
 ```
 
 Opens at http://localhost:8501 and displays:
-- **Overall Scores** — Average Faithfulness, Tool Selection, Relevancy metrics
-- **Per-Case Scores** — Grouped bar chart comparing all metrics side-by-side per case
-- **Case Details** — Expandable sections with query, tool used, answer, and score explanations
+- **Agent Architecture** — Mermaid diagram of tool routing
+- **Section 1** — v1 prompts + scores
+- **Section 2** — v2 improvements (diff view) + scores
+- **Section 3** — v1 vs v2 comparison chart (Goal/Plan/Act color-coded)
 
 ## Project Structure
 
 ```
 ├── src/
-│   ├── agent.py          # Agent with @instrument decorators + correct/broken modes
-│   └── tools.py          # Tool implementations (Doc Search, HR Search, Calculator)
+│   ├── agent.py           # LLM-based agent with Cortex tool selection + answer gen
+│   ├── prompts_v1.py      # v1 prompts (weak: "enrich with best practices")
+│   ├── prompts_v2.py      # v2 prompts (grounded: "ONLY from context")
+│   └── tools.py           # Tool implementations (doc search, HR search, calculator)
 ├── data/
-│   ├── documentation.json     # Internal docs corpus
-│   └── hr_policies.json       # HR policies corpus (ground truth: 20 PTO days)
+│   ├── documentation.json      # v1 docs (no coding standards)
+│   ├── documentation_v2.json   # v2 docs (includes Python coding standards)
+│   └── hr_policies.json        # HR policies corpus
 ├── evaluation/
-│   ├── run_eval.py       # Rule-based evaluation (no LLM needed)
-│   └── trulens_eval.py   # TruLens LLM-as-Judge evaluation (Cortex/OpenAI)
-├── app.py                # Streamlit dashboard for evaluation visualization
-├── main.py               # Quick interactive demo
+│   ├── trulens_eval.py         # AgentGPA evaluation (Cortex LLM-as-Judge)
+│   └── trulens_results.json    # Pre-computed evaluation results
+├── app.py                 # Streamlit dashboard
+├── main.py                # Quick interactive demo
+├── .env.example           # Environment variable template
 ├── pyproject.toml         # Dependencies + ruff config (Google style)
-└── .python-version        # Python 3.11 (required for trulens-providers-cortex)
+└── .python-version        # Python 3.11
 ```
 
 ## Linting
 
 ```bash
-uvx ruff check .
-uvx ruff format .
+uv run ruff check .
+uv run ruff format .
 ```
 
 ## Key Takeaway
 
-With just 4 test cases and an "internal assistant" scenario, AgentGPA evaluates all three critical dimensions of agent quality: **Faithfulness**, **Tool Selection**, and **Relevancy**.
+With 3 test cases and an internal developer assistant, AgentGPA evaluates agent quality on **Goal** (intent achieved), **Plan** (right tool), and **Act** (faithful to source). The v1→v2 feedback loop demonstrates how prompt engineering + knowledge base expansion eliminates hallucination.
