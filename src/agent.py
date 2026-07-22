@@ -2,8 +2,9 @@
 
 Deboxx Poland Demo: AgentGPA Evaluation Demo.
 
-Uses Snowflake Cortex LLM for tool selection and answer generation.
+Uses an OpenAI-compatible LLM API for tool selection and answer generation.
 v1/v2 behavior is controlled by different system prompts.
+Provider is configured via LLM_PROVIDER env var (cortex/openai/anthropic).
 """
 
 import json
@@ -13,6 +14,7 @@ from dataclasses import dataclass
 from trulens.core.otel.instrument import instrument
 from trulens.otel.semconv.trace import SpanAttributes
 
+from src.llm_client import chat_complete
 from src.tools import TOOLS
 
 
@@ -31,20 +33,18 @@ class AgentResponse:
 class InternalDeveloperAssistant:
     """LLM-based Internal Developer Assistant for AgentGPA demo.
 
-    Uses Cortex LLM for both tool selection and answer generation.
-    The version (v1/v2) determines which prompts are used.
+    Uses an OpenAI-compatible API for both tool selection and answer generation.
+    The version (v1/v2) determines which prompts and data are used.
     """
 
-    def __init__(self, version: str = "v2", snowpark_session=None):
+    def __init__(self, version: str = "v2"):
         """Initialize the agent.
 
         Args:
             version: "v1" (weak prompts) or "v2" (improved prompts).
-            snowpark_session: Snowpark session for Cortex calls.
         """
         self.version = version
         self.tools = TOOLS
-        self.session = snowpark_session
         self.last_response: AgentResponse | None = None
 
         if version == "v1":
@@ -73,19 +73,10 @@ class InternalDeveloperAssistant:
         Returns:
             Tool name string.
         """
-        from snowflake.cortex import complete
-
         tool_names = ", ".join(self.tools.keys())
         prompt = self._tool_selection_prompt.format(tool_names=tool_names)
 
-        resp = complete(
-            model="llama3.1-70b",
-            prompt=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": query},
-            ],
-            session=self.session,
-        )
+        resp = chat_complete(system_prompt=prompt, user_message=query)
 
         # Parse tool name from response
         selected = resp.strip().lower().replace("'", "").replace('"', "")
@@ -147,11 +138,8 @@ class InternalDeveloperAssistant:
         Returns:
             Generated answer string.
         """
-        from snowflake.cortex import complete
-
-        # Build context from tool output
+        # Calculator results are deterministic, no LLM needed
         if tool_name == "calculator":
-            # Calculator results are deterministic, no LLM needed
             result = tool_output.get("result")
             if result is not None:
                 return f"The answer is {result:,.2f}."
@@ -163,17 +151,11 @@ class InternalDeveloperAssistant:
         else:
             context = "No relevant information found."
 
-        prompt = self._answer_generation_prompt.format(context=context, query=query)
-
-        resp = complete(
-            model="llama3.1-70b",
-            prompt=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": query},
-            ],
-            session=self.session,
+        prompt = self._answer_generation_prompt.format(
+            context=context, query=query
         )
 
+        resp = chat_complete(system_prompt=prompt, user_message=query)
         return resp.strip()
 
     @instrument(
