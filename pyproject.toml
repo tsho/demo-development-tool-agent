@@ -6,9 +6,9 @@ requires-python = ">=3.11"
 dependencies = [
     "altair>=5",
     "python-dotenv>=1.2.2",
+    "requests>=2.31",
     "streamlit>=1.58.0",
     "trulens>=2.8",
-    "trulens-providers-cortex>=2.8",
 ]
 
 [project.scripts]
@@ -54,8 +54,3 @@ known-first-party = ["src"]
 [dependency-groups]
 dev = ["ruff>=0.11"]
 
-[tool.uv]
-override-dependencies = [
-    "llvmlite>=0.43",
-    "numba>=0.60",
-]

@@ -1,6 +1,6 @@
 """AgentGPA Evaluation - Deboxx Poland Demo.
 
-Evaluates the Internal Developer Assistant v1 and v2 using Cortex LLM-as-Judge.
+Evaluates the Internal Developer Assistant v1 and v2 using LLM-as-Judge.
 Compares Goal / Plan / Act scores before and after prompt improvement.
 
 Results are saved to evaluation/trulens_results.json for the Streamlit dashboard.
@@ -20,9 +20,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Load .env from project root
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-from snowflake.snowpark import Session  # noqa: E402
-
 from src.agent import InternalDeveloperAssistant  # noqa: E402
+from src.llm_client import chat_complete  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -31,44 +30,18 @@ logger = logging.getLogger(__name__)
 
 RESULTS_PATH = Path(__file__).parent / "trulens_results.json"
 
-
-# --- Snowflake Connection ---
-
-
-def _create_snowpark_session() -> Session:
-    """Create a Snowflake Snowpark session from environment variables."""
-    required = [
-        "SNOWFLAKE_ACCOUNT",
-        "SNOWFLAKE_USER",
-        "SNOWFLAKE_USER_PASSWORD",
-    ]
-    missing = [k for k in required if not os.environ.get(k)]
-    if missing:
-        logger.error("Missing env vars: %s", ", ".join(missing))
-        sys.exit(1)
-
-    return Session.builder.configs(
-        {
-            "account": os.environ["SNOWFLAKE_ACCOUNT"],
-            "user": os.environ["SNOWFLAKE_USER"],
-            "password": os.environ["SNOWFLAKE_USER_PASSWORD"],
-            "role": os.environ.get("SNOWFLAKE_ROLE", "ACCOUNTADMIN"),
-            "warehouse": os.environ.get("SNOWFLAKE_WAREHOUSE"),
-        }
-    ).create()
+JUDGE_SYSTEM_PROMPT = "You are an evaluation judge. Respond ONLY as JSON."
 
 
 # --- LLM-as-Judge Functions ---
 
 
 def _judge_goal(
-    session, query: str, answer: str, expected_answer: str
+    query: str, answer: str, expected_answer: str
 ) -> tuple[float, str]:
     """Judge whether the agent achieved the user's goal."""
-    from snowflake.cortex import complete
-
-    prompt = (
-        "You are an evaluation judge. Rate whether the AGENT ANSWER "
+    user_msg = (
+        "Rate whether the AGENT ANSWER "
         "achieves the USER'S GOAL on a scale from 0.0 to 1.0.\n\n"
         f"USER QUESTION:\n{query}\n\n"
         f"EXPECTED CORRECT ANSWER:\n{expected_answer}\n\n"
@@ -81,20 +54,16 @@ def _judge_goal(
         'Respond ONLY as JSON: {"score": <float>, "reason": "<brief>"}'
     )
 
-    resp = complete(
-        model="llama3.1-70b",
-        prompt=[{"role": "user", "content": prompt}],
-        session=session,
+    resp = chat_complete(
+        system_prompt=JUDGE_SYSTEM_PROMPT, user_message=user_msg
     )
     return _parse_judge_response(resp)
 
 
-def _judge_plan(session, query: str, tool_used: str) -> tuple[float, str]:
+def _judge_plan(query: str, tool_used: str) -> tuple[float, str]:
     """Judge whether the agent selected the right tool."""
-    from snowflake.cortex import complete
-
-    prompt = (
-        "You are an evaluation judge. Rate whether the SELECTED TOOL "
+    user_msg = (
+        "Rate whether the SELECTED TOOL "
         "is the best choice for the QUERY on a scale from 0.0 to 1.0.\n\n"
         f"QUERY:\n{query}\n\n"
         f"SELECTED TOOL: {tool_used}\n\n"
@@ -113,23 +82,19 @@ def _judge_plan(session, query: str, tool_used: str) -> tuple[float, str]:
         'Respond ONLY as JSON: {"score": <float>, "reason": "<brief>"}'
     )
 
-    resp = complete(
-        model="llama3.1-70b",
-        prompt=[{"role": "user", "content": prompt}],
-        session=session,
+    resp = chat_complete(
+        system_prompt=JUDGE_SYSTEM_PROMPT, user_message=user_msg
     )
     return _parse_judge_response(resp)
 
 
-def _judge_act(session, answer: str, context: str) -> tuple[float, str]:
+def _judge_act(answer: str, context: str) -> tuple[float, str]:
     """Judge whether the answer is faithful to source data."""
-    from snowflake.cortex import complete
-
     if not context or context == "No relevant information found.":
         return 0.5, "No context retrieved (tool does not use retrieval)"
 
-    prompt = (
-        "You are an evaluation judge. Rate how faithfully the ANSWER "
+    user_msg = (
+        "Rate how faithfully the ANSWER "
         "reflects the SOURCE DATA on a scale from 0.0 to 1.0.\n\n"
         f"SOURCE DATA:\n{context}\n\n"
         f"ANSWER:\n{answer}\n\n"
@@ -141,10 +106,8 @@ def _judge_act(session, answer: str, context: str) -> tuple[float, str]:
         'Respond ONLY as JSON: {"score": <float>, "reason": "<brief>"}'
     )
 
-    resp = complete(
-        model="llama3.1-70b",
-        prompt=[{"role": "user", "content": prompt}],
-        session=session,
+    resp = chat_complete(
+        system_prompt=JUDGE_SYSTEM_PROMPT, user_message=user_msg
     )
     return _parse_judge_response(resp)
 
@@ -201,11 +164,10 @@ TEST_CASES = [
 # --- Main ---
 
 
-def _run_version(session, version: str) -> list[dict]:
+def _run_version(version: str) -> list[dict]:
     """Run all test cases for a given agent version.
 
     Args:
-        session: Snowpark session.
         version: "v1" or "v2".
 
     Returns:
@@ -219,7 +181,7 @@ def _run_version(session, version: str) -> list[dict]:
     for case in TEST_CASES:
         logger.info("\n  [%s] %s", case["id"], case["description"])
 
-        agent = InternalDeveloperAssistant(version=version, snowpark_session=session)
+        agent = InternalDeveloperAssistant(version=version)
         response = agent.run(case["query"])
 
         # Get context for Act evaluation
@@ -236,12 +198,12 @@ def _run_version(session, version: str) -> list[dict]:
 
         # Evaluate with LLM judges
         goal_score, goal_reason = _judge_goal(
-            session, case["query"], response.answer, case["expected_answer"]
+            case["query"], response.answer, case["expected_answer"]
         )
         plan_score, plan_reason = _judge_plan(
-            session, case["query"], response.tool_used
+            case["query"], response.tool_used
         )
-        act_score, act_reason = _judge_act(session, response.answer, context)
+        act_score, act_reason = _judge_act(response.answer, context)
 
         logger.info("    Tool: %s", response.tool_used)
         logger.info("    Answer: %s...", response.answer[:60])
@@ -275,26 +237,25 @@ def _run_version(session, version: str) -> list[dict]:
 
 def run_trulens_evaluation():
     """Run the AgentGPA evaluation for v1 and v2."""
+    provider = os.getenv("LLM_PROVIDER", "cortex")
+    model = os.getenv("LLM_MODEL", "llama3.1-70b")
+
     logger.info("=" * 60)
     logger.info("  AgentGPA Evaluation - Internal Developer Assistant")
     logger.info("  Deboxx Poland Demo (v1 vs v2 Comparison)")
     logger.info("=" * 60)
-
-    # Connect
-    logger.info("\n[1/4] Connecting to Snowflake...")
-    session = _create_snowpark_session()
-    logger.info("  Connected: %s", session.get_current_account())
+    logger.info("  Provider: %s | Model: %s", provider, model)
 
     # Run v1
-    logger.info("\n[2/4] Evaluating v1 (weak prompts)...")
-    v1_results = _run_version(session, "v1")
+    logger.info("\n[1/3] Evaluating v1 (weak prompts)...")
+    v1_results = _run_version("v1")
 
     # Run v2
-    logger.info("\n[3/4] Evaluating v2 (improved prompts)...")
-    v2_results = _run_version(session, "v2")
+    logger.info("\n[2/3] Evaluating v2 (improved prompts)...")
+    v2_results = _run_version("v2")
 
     # Save combined results
-    logger.info("\n[4/4] Saving results...")
+    logger.info("\n[3/3] Saving results...")
     all_results = {"v1": v1_results, "v2": v2_results}
     RESULTS_PATH.write_text(json.dumps(all_results, indent=2, ensure_ascii=False))
     logger.info("  Saved to: %s", RESULTS_PATH)
@@ -304,7 +265,10 @@ def run_trulens_evaluation():
     logger.info("  COMPARISON: v1 vs v2")
     logger.info("=" * 60)
     logger.info("")
-    logger.info("  %-10s %5s %6s %6s %6s %6s", "Case", "", "Goal", "Plan", "Act", "GPA")
+    logger.info(
+        "  %-10s %5s %6s %6s %6s %6s",
+        "Case", "", "Goal", "Plan", "Act", "GPA",
+    )
     logger.info("  %s", "─" * 45)
 
     for v1, v2 in zip(v1_results, v2_results, strict=True):
@@ -326,8 +290,6 @@ def run_trulens_evaluation():
 
     logger.info("  View in Streamlit: uv run streamlit run app.py")
     logger.info("")
-
-    session.close()
 
 
 if __name__ == "__main__":
