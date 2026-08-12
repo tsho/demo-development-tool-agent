@@ -65,6 +65,7 @@ def _complete_cortex(system_prompt: str, user_message: str) -> str:
         ],
         "temperature": 0,
         "max_tokens": 2048,
+        "stream": False,
     }
 
     response = requests.post(url, headers=headers, json=payload, timeout=60)
