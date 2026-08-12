@@ -9,14 +9,11 @@ Run with: uv run streamlit run app.py
 """
 
 import json
-import sys
 from pathlib import Path
 
 import altair as alt
 import pandas as pd
 import streamlit as st
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 # --- Page Config ---
 
@@ -460,91 +457,6 @@ v2 fixes both: adds internal doc (2 spaces) + grounding constraint.
             c3.metric("Act", f"{r['act']:.2f}", help=r["act_reason"])
             if timings.get("total_s"):
                 c4.metric("Total time", f"{timings['total_s']}s")
-
-    # --- Live Query ---
-    st.subheader("Try a Query")
-    st.markdown("Run the agent live and inspect the trace in real time.")
-
-    col_ver, col_q = st.columns([1, 3])
-    version_select = col_ver.radio(
-        "Agent version", ["v1", "v2"], index=1, horizontal=True
-    )
-    user_query = col_q.text_input(
-        "Query",
-        placeholder="e.g. What is the Python indentation rule in our codebase?",
-    )
-
-    if st.button("Run Agent", type="primary") and user_query.strip():
-        from src.agent import InternalDeveloperAssistant
-
-        with st.spinner("Running agent..."):
-            agent = InternalDeveloperAssistant(version=version_select)
-            response = agent.run(user_query)
-
-        st.markdown("**Trace:**")
-        timings = response.step_timings
-        token_usage = response.token_usage
-        prompts = response.prompts
-
-        # Step 1
-        t1 = timings.get("tool_selection_s", "")
-        st.markdown(
-            f"**Step 1 — Tool Selection** `[TOOL span]`"
-            + (f" ⏱ {t1}s" if t1 != "" else "")
-        )
-        col_lq, col_lt = st.columns([3, 1])
-        col_lq.markdown(f"*Query:* {user_query}")
-        col_lt.success(f"`{response.tool_used}`")
-        sel_usage = token_usage.get("tool_selection", {})
-        if sel_usage.get("total_tokens"):
-            st.caption(
-                f"Tokens — prompt: {sel_usage['prompt_tokens']} / "
-                f"completion: {sel_usage['completion_tokens']} / "
-                f"total: {sel_usage['total_tokens']}"
-            )
-        if response.selection_raw_response:
-            with st.expander("LLM raw response (tool selection)"):
-                st.text(response.selection_raw_response)
-        if prompts.get("tool_selection"):
-            with st.expander("Prompt sent to LLM (tool selection)"):
-                st.code(prompts["tool_selection"], language="text")
-
-        # Step 2
-        t2 = timings.get("tool_execution_s", "")
-        st.markdown(
-            f"**Step 2 — Tool Execution** `[RETRIEVAL span]`"
-            + (f" ⏱ {t2}s" if t2 != "" else "")
-        )
-        tool_results = response.tool_output.get("results", [])
-        if tool_results and "message" not in tool_results[0]:
-            live_context = tool_results[0].get("content", "")
-            st.code(live_context[:400], language="text")
-        elif response.tool_used == "calculator":
-            calc_result = response.tool_output.get("result")
-            st.info(f"Calculator result: {calc_result}")
-        else:
-            st.warning("No context retrieved.")
-
-        # Step 3
-        t3 = timings.get("answer_generation_s", "")
-        st.markdown(
-            f"**Step 3 — Answer Generation** `[AGENT span]`"
-            + (f" ⏱ {t3}s" if t3 != "" else "")
-        )
-        st.info(response.answer)
-        ans_usage = token_usage.get("answer_generation", {})
-        if ans_usage.get("total_tokens"):
-            st.caption(
-                f"Tokens — prompt: {ans_usage['prompt_tokens']} / "
-                f"completion: {ans_usage['completion_tokens']} / "
-                f"total: {ans_usage['total_tokens']}"
-            )
-        if prompts.get("answer_generation"):
-            with st.expander("Prompt sent to LLM (answer generation)"):
-                st.code(prompts["answer_generation"], language="text")
-
-        if timings.get("total_s"):
-            st.metric("Total execution time", f"{timings['total_s']}s")
 
     st.divider()
 
