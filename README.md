@@ -51,7 +51,8 @@ Developer Query → LLM Router (Tool Selection Prompt)
                      └─ math      → calculator          → Response (bypasses LLM)
 ```
 
-- LLM Router and Answer Generator powered by Snowflake Cortex (`llama3.1-70b`)
+- LLM Router and Answer Generator use an **OpenAI-compatible REST API** via `src/llm_client.py`
+- Default provider: Snowflake Cortex REST API (`llama3.1-70b`) with Programmatic Access Token (PAT)
 - v1/v2 behavior controlled by different prompts (`src/prompts_v1.py`, `src/prompts_v2.py`)
 - v1 uses `data/documentation.json`, v2 uses `data/documentation_v2.json` (with coding standards)
 
@@ -59,20 +60,56 @@ Developer Query → LLM Router (Tool Selection Prompt)
 
 - Python 3.11+
 - [uv](https://docs.astral.sh/uv/) package manager
-- Snowflake account with Cortex access
+- Snowflake account with Cortex access (or OpenAI / Anthropic API key)
 
 ## Setup
 
 ```bash
 git clone <repo-url>
 cd demo-development-tool-agent
-git checkout feature/deboxx-poland-agent-demo
 
 uv sync
 
 cp .env.example .env
-# Edit .env with your Snowflake credentials
+# Edit .env with your credentials (see LLM Provider section below)
 ```
+
+## LLM Provider Configuration
+
+Set `LLM_PROVIDER` in `.env` to select a provider. Default is `cortex`.
+
+### Snowflake Cortex (default)
+
+Requires a [Programmatic Access Token (PAT)](https://docs.snowflake.com/en/user-guide/programmatic-access-tokens).
+
+```bash
+LLM_PROVIDER=cortex
+LLM_MODEL=llama3.1-70b
+SNOWFLAKE_ACCOUNT=<account-identifier>
+SNOWFLAKE_TOKEN=<your-pat>
+```
+
+Alternatively, set `SNOWFLAKE_CONNECTION_NAME` to use a profile from `~/.snowflake/connections.toml`.
+
+### OpenAI
+
+```bash
+LLM_PROVIDER=openai
+LLM_MODEL=gpt-4o
+OPENAI_API_KEY=sk-...
+```
+
+Also works with any OpenAI-compatible endpoint (Azure OpenAI, etc.) by setting `OPENAI_BASE_URL`.
+
+### Anthropic
+
+```bash
+LLM_PROVIDER=anthropic
+LLM_MODEL=claude-sonnet-4-20250514
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+See `.env.example` for all supported providers (AWS Bedrock, Google Vertex AI, HuggingFace).
 
 ## 1. Run the AI Agent
 
@@ -85,7 +122,7 @@ Programmatic usage:
 ```python
 from src.agent import InternalDeveloperAssistant
 
-agent = InternalDeveloperAssistant(version="v2", snowpark_session=session)
+agent = InternalDeveloperAssistant(version="v2")
 response = agent.run("What is the Python indentation rule in our codebase?")
 # response.answer → "2-space indentation..."
 # response.tool_used → "documentation_search"
@@ -100,20 +137,6 @@ uv run python evaluation/trulens_eval.py
 ```
 
 Results saved to `evaluation/trulens_results.json`.
-
-### Alternative LLM Providers
-
-The default provider is Snowflake Cortex. To use an alternative, set the corresponding environment variable in `.env`:
-
-```bash
-# OpenAI
-OPENAI_API_KEY=sk-...
-
-# Anthropic
-ANTHROPIC_API_KEY=sk-ant-...
-```
-
-See `.env.example` for all supported providers (AWS Bedrock, Google Vertex AI, Azure OpenAI, HuggingFace).
 
 ## 3. Launch Streamlit Dashboard
 
@@ -131,7 +154,8 @@ Opens at http://localhost:8501 and displays:
 
 ```
 ├── src/
-│   ├── agent.py           # LLM-based agent with Cortex tool selection + answer gen
+│   ├── agent.py           # LLM-based agent with tool selection + answer gen
+│   ├── llm_client.py      # Unified LLM client (Cortex REST / OpenAI / Anthropic)
 │   ├── prompts_v1.py      # v1 prompts (weak: "enrich with best practices")
 │   ├── prompts_v2.py      # v2 prompts (grounded: "ONLY from context")
 │   └── tools.py           # Tool implementations (doc search, HR search, calculator)
