@@ -223,6 +223,11 @@ def _run_version(version: str) -> list[dict]:
                 "expected_answer": case["expected_answer"],
                 "answer": response.answer,
                 "retrieved_context": context,
+                # Observability fields
+                "step_timings": response.step_timings,
+                "prompts": response.prompts,
+                "selection_raw_response": response.selection_raw_response,
+                "token_usage": response.token_usage,
                 "goal": goal_score,
                 "goal_reason": goal_reason,
                 "plan": plan_score,

@@ -33,8 +33,8 @@ def _load_snowflake_connection() -> dict:
     return config.get(conn_name, {})
 
 
-def _complete_cortex(system_prompt: str, user_message: str) -> str:
-    """Call Snowflake Cortex REST API (OpenAI-compatible)."""
+def _complete_cortex(system_prompt: str, user_message: str) -> tuple[str, dict]:
+    """Call Snowflake Cortex REST API. Returns (content, usage)."""
     conn = _load_snowflake_connection()
     account = os.getenv("SNOWFLAKE_ACCOUNT", conn.get("account", ""))
     token = os.getenv("SNOWFLAKE_TOKEN", conn.get("token", ""))
@@ -72,11 +72,17 @@ def _complete_cortex(system_prompt: str, user_message: str) -> str:
     response.raise_for_status()
 
     result = response.json()
-    return result["choices"][0]["message"]["content"].strip()
+    content = result["choices"][0]["message"]["content"].strip()
+    usage = result.get("usage", {})
+    return content, {
+        "prompt_tokens": usage.get("prompt_tokens", 0),
+        "completion_tokens": usage.get("completion_tokens", 0),
+        "total_tokens": usage.get("total_tokens", 0),
+    }
 
 
-def _complete_openai(system_prompt: str, user_message: str) -> str:
-    """Call OpenAI-compatible API."""
+def _complete_openai(system_prompt: str, user_message: str) -> tuple[str, dict]:
+    """Call OpenAI-compatible API. Returns (content, usage)."""
     api_key = os.getenv("OPENAI_API_KEY", "")
     if not api_key:
         raise ValueError("OPENAI_API_KEY is required for openai provider.")
@@ -104,11 +110,17 @@ def _complete_openai(system_prompt: str, user_message: str) -> str:
     response.raise_for_status()
 
     result = response.json()
-    return result["choices"][0]["message"]["content"].strip()
+    content = result["choices"][0]["message"]["content"].strip()
+    usage = result.get("usage", {})
+    return content, {
+        "prompt_tokens": usage.get("prompt_tokens", 0),
+        "completion_tokens": usage.get("completion_tokens", 0),
+        "total_tokens": usage.get("total_tokens", 0),
+    }
 
 
-def _complete_anthropic(system_prompt: str, user_message: str) -> str:
-    """Call Anthropic Messages API."""
+def _complete_anthropic(system_prompt: str, user_message: str) -> tuple[str, dict]:
+    """Call Anthropic Messages API. Returns (content, usage)."""
     api_key = os.getenv("ANTHROPIC_API_KEY", "")
     if not api_key:
         raise ValueError("ANTHROPIC_API_KEY is required for anthropic provider.")
@@ -134,7 +146,13 @@ def _complete_anthropic(system_prompt: str, user_message: str) -> str:
     response.raise_for_status()
 
     result = response.json()
-    return result["content"][0]["text"].strip()
+    content = result["content"][0]["text"].strip()
+    usage = result.get("usage", {})
+    return content, {
+        "prompt_tokens": usage.get("input_tokens", 0),
+        "completion_tokens": usage.get("output_tokens", 0),
+        "total_tokens": usage.get("input_tokens", 0) + usage.get("output_tokens", 0),
+    }
 
 
 def chat_complete(system_prompt: str, user_message: str) -> str:
@@ -144,13 +162,17 @@ def chat_complete(system_prompt: str, user_message: str) -> str:
         - "cortex" (default): Snowflake Cortex REST API
         - "openai": OpenAI or any OpenAI-compatible endpoint
         - "anthropic": Anthropic Messages API
+    """
+    content, _ = chat_complete_with_usage(system_prompt, user_message)
+    return content
 
-    Args:
-        system_prompt: System/instruction prompt.
-        user_message: User message content.
 
-    Returns:
-        LLM response content as a string.
+def chat_complete_with_usage(
+    system_prompt: str, user_message: str
+) -> tuple[str, dict]:
+    """Call LLM and return (content, usage).
+
+    usage dict: {"prompt_tokens": int, "completion_tokens": int, "total_tokens": int}
     """
     provider = os.getenv("LLM_PROVIDER", "cortex")
 
