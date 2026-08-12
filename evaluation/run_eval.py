@@ -1,4 +1,4 @@
-"""AgentGPA Evaluation - Deboxx Poland Demo.
+"""AgentGPA Evaluation.
 
 Evaluates the Internal Developer Assistant on three metrics:
     - Faithfulness: Is the answer grounded in the retrieved data?
@@ -210,7 +210,7 @@ def run_evaluation():
     """Run all test cases and produce AgentGPA-compatible evaluation results."""
     print("=" * 70)
     print("  AgentGPA Evaluation - Internal Developer Assistant")
-    print("  Deboxx Poland Demo")
+    print("  AgentGPA Demo")
     print("=" * 70)
     print()
 

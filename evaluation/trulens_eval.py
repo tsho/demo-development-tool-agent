@@ -1,4 +1,4 @@
-"""AgentGPA Evaluation - Deboxx Poland Demo.
+"""AgentGPA Evaluation.
 
 Evaluates the Internal Developer Assistant v1 and v2 using LLM-as-Judge.
 Compares Goal / Plan / Act scores before and after prompt improvement.
@@ -242,7 +242,7 @@ def run_trulens_evaluation():
 
     logger.info("=" * 60)
     logger.info("  AgentGPA Evaluation - Internal Developer Assistant")
-    logger.info("  Deboxx Poland Demo (v1 vs v2 Comparison)")
+    logger.info("  AgentGPA Demo (v1 vs v2 Comparison)")
     logger.info("=" * 60)
     logger.info("  Provider: %s | Model: %s", provider, model)
 

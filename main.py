@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def demo():
     """Run all 3 demo cases and log results."""
     logger.info("\n" + "=" * 60)
-    logger.info("  Internal Developer Assistant - Deboxx Poland Demo")
+    logger.info("  Internal Developer Assistant")
     logger.info("=" * 60)
 
     cases = [
