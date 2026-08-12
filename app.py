@@ -377,6 +377,89 @@ v2 fixes both: adds internal doc (2 spaces) + grounding constraint.
 
     st.divider()
 
+    # =========================================================
+    # SECTION 4: Observability
+    # =========================================================
+    st.header("4. Observability — Agent Trace")
+    st.markdown(
+        "Step-by-step execution trace showing which tool was selected, "
+        "what was retrieved, and how the answer was generated."
+    )
+
+    for r in v2_results:
+        gpa = (r["goal"] + r["plan"] + r["act"]) / 3
+        timings = r.get("step_timings", {})
+        token_usage = r.get("token_usage", {})
+        prompts = r.get("prompts", {})
+
+        with st.expander(
+            f"{r['case_id'].upper()} — {r['description']} [GPA: {gpa:.2f}]",
+            expanded=(r["case_id"] == "case_3"),
+        ):
+            # Step 1: Tool Selection
+            t1 = timings.get("tool_selection_s", "")
+            t1_label = f" ⏱ {t1}s" if t1 != "" else ""
+            st.markdown(f"**Step 1 — Tool Selection** `[TOOL span]`{t1_label}")
+            col_q, col_t = st.columns([3, 1])
+            col_q.markdown(f"*Query:* {r['query']}")
+            col_t.success(f"`{r['tool_used']}`")
+            sel_usage = token_usage.get("tool_selection", {})
+            if sel_usage.get("total_tokens"):
+                st.caption(
+                    f"Tokens — prompt: {sel_usage['prompt_tokens']} / "
+                    f"completion: {sel_usage['completion_tokens']} / "
+                    f"total: {sel_usage['total_tokens']}"
+                )
+            if r.get("selection_raw_response"):
+                with st.expander("LLM raw response (tool selection)"):
+                    st.text(r["selection_raw_response"])
+            if prompts.get("tool_selection"):
+                with st.expander("Prompt sent to LLM (tool selection)"):
+                    st.code(
+                        prompts["tool_selection"].replace(
+                            "{tool_names}", r["tool_used"]
+                        ),
+                        language="text",
+                    )
+
+            # Step 2: Tool Execution
+            t2 = timings.get("tool_execution_s", "")
+            t2_label = f" ⏱ {t2}s" if t2 != "" else ""
+            st.markdown(f"**Step 2 — Tool Execution** `[RETRIEVAL span]`{t2_label}")
+            context = r.get("retrieved_context", "")
+            if context:
+                st.code(context[:400], language="text")
+            else:
+                st.info("Calculator: deterministic result, no document retrieval.")
+
+            # Step 3: Answer Generation
+            t3 = timings.get("answer_generation_s", "")
+            t3_label = f" ⏱ {t3}s" if t3 != "" else ""
+            st.markdown(
+                f"**Step 3 — Answer Generation** `[AGENT span]`{t3_label}"
+            )
+            st.info(r["answer"])
+            ans_usage = token_usage.get("answer_generation", {})
+            if ans_usage.get("total_tokens"):
+                st.caption(
+                    f"Tokens — prompt: {ans_usage['prompt_tokens']} / "
+                    f"completion: {ans_usage['completion_tokens']} / "
+                    f"total: {ans_usage['total_tokens']}"
+                )
+            if prompts.get("answer_generation"):
+                with st.expander("Prompt sent to LLM (answer generation)"):
+                    st.code(prompts["answer_generation"], language="text")
+
+            # GPA scores
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("Goal", f"{r['goal']:.2f}", help=r["goal_reason"])
+            c2.metric("Plan", f"{r['plan']:.2f}", help=r["plan_reason"])
+            c3.metric("Act", f"{r['act']:.2f}", help=r["act_reason"])
+            if timings.get("total_s"):
+                c4.metric("Total time", f"{timings['total_s']}s")
+
+    st.divider()
+
     # --- Framework Reference ---
     st.header("AgentGPA Framework")
     st.markdown(

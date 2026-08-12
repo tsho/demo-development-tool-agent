@@ -9,13 +9,33 @@
       "expected_tool": "calculator",
       "expected_answer": "200",
       "answer": "The answer is 200.00.",
+      "retrieved_context": "Calculation result: 200.0",
+      "step_timings": {
+        "tool_selection_s": 0.665,
+        "tool_execution_s": 0.0,
+        "answer_generation_s": 0.0,
+        "total_s": 0.665
+      },
+      "prompts": {
+        "tool_selection": "You are a helpful assistant. Pick the best tool for the user's question.\n\nAvailable tools: documentation_search, hr_policy_search, calculator\n\nROUTING RULES:\n- If the question mentions APIs, requests, quotas, or infrastructure numbers, use documentation_search (our docs cover capacity planning).\n- If the question is about employee policies, use hr_policy_search.\n- Only use calculator for pure math expressions with no domain context (e.g., \"what is 2+2\").\n\nRespond with ONLY the tool name, nothing else.",
+        "answer_generation": ""
+      },
+      "selection_raw_response": "calculator",
+      "token_usage": {
+        "tool_selection": {
+          "prompt_tokens": 131,
+          "completion_tokens": 2,
+          "total_tokens": 133
+        },
+        "answer_generation": {}
+      },
       "goal": 1.0,
       "goal_reason": "Fully achieves the goal with correct information.",
       "plan": 1.0,
       "plan_reason": "Calculator is the most suitable tool for mathematical calculations, including percentages.",
       "act": 1.0,
       "act_reason": "Exact match with source data",
-      "timestamp": "2026-06-18 05:10:31"
+      "timestamp": "2026-08-12 15:30:58"
     },
     {
       "case_id": "case_2",
@@ -26,13 +46,33 @@
       "expected_tool": "calculator",
       "expected_answer": "90,000 requests",
       "answer": "The answer is 90,000.00.",
+      "retrieved_context": "Calculation result: 90000",
+      "step_timings": {
+        "tool_selection_s": 0.587,
+        "tool_execution_s": 0.0,
+        "answer_generation_s": 0.0,
+        "total_s": 0.587
+      },
+      "prompts": {
+        "tool_selection": "You are a helpful assistant. Pick the best tool for the user's question.\n\nAvailable tools: documentation_search, hr_policy_search, calculator\n\nROUTING RULES:\n- If the question mentions APIs, requests, quotas, or infrastructure numbers, use documentation_search (our docs cover capacity planning).\n- If the question is about employee policies, use hr_policy_search.\n- Only use calculator for pure math expressions with no domain context (e.g., \"what is 2+2\").\n\nRespond with ONLY the tool name, nothing else.",
+        "answer_generation": ""
+      },
+      "selection_raw_response": "calculator",
+      "token_usage": {
+        "tool_selection": {
+          "prompt_tokens": 143,
+          "completion_tokens": 2,
+          "total_tokens": 257
+        },
+        "answer_generation": {}
+      },
       "goal": 1.0,
-      "goal_reason": "Correctly calculates the total number of requests handled in 30 minutes.",
+      "goal_reason": "Fully achieves the goal with correct information.",
       "plan": 1.0,
       "plan_reason": "Calculator is the most suitable tool for performing mathematical calculations, such as converting requests per second to requests per 30 minutes.",
       "act": 1.0,
-      "act_reason": "Exact match with source data, including formatting.",
-      "timestamp": "2026-06-18 05:10:37"
+      "act_reason": "Exact match with source data",
+      "timestamp": "2026-08-12 15:31:01"
     },
     {
       "case_id": "case_3",
@@ -42,14 +82,38 @@
       "tool_used": "documentation_search",
       "expected_tool": "documentation_search",
       "expected_answer": "All Python code uses 2-space indentation. This is enforced by pre-commit hooks.",
-      "answer": "In our codebase, we follow the official Python style guide, PEP 8, for indentation. According to PEP 8, the recommended indentation is 4 spaces per level. This means that for each level of nesting, you should add 4 spaces to the indentation.\n\nHere's an example:\n```python\ndef my_function():\n    # 4 spaces for the first level of indentation\n    if condition:\n        # 8 spaces for the second level of indentation\n        print(\"Hello, World!\")\n        # 8 spaces for the second level of indentation\n        another_variable = \"value\"\n    # 4 spaces for the first level of indentation\n    return result\n```\nUsing 4 spaces for indentation has several benefits:\n\n1. **Readability**: It's easy to read and understand the code structure.\n2. **Consistency**: It ensures consistency throughout the codebase, making it easier for developers to navigate and contribute.\n3. **Tooling**: Most Python IDEs and text editors are configured to use 4 spaces for indentation by default.\n\nTo enforce this rule, we use a combination of tools:\n\n1. **`flake8`**: Our CI/CD pipeline runs `flake8` to check for PEP 8 compliance, including indentation.\n2. **`.editorconfig`**: Our `.editorconfig` file specifies the indentation settings for our codebase, ensuring that all developers use the same settings.\n3. **`pre-commit` hooks**: We use `pre-commit` hooks to run `flake8` and other checks before code is committed to the repository.\n\nTo ensure you're following the indentation rule, make sure to:\n\n1. Use a Python IDE or text editor that supports 4-space indentation.\n2. Configure your editor to use 4 spaces for indentation.\n3. Run `flake8` locally before committing code to catch any indentation issues.\n\nBy following this rule, we maintain a consistent and readable codebase, making it easier for everyone to contribute and maintain our code.",
+      "answer": "In our codebase, we follow the official Python style guide, PEP 8, for indentation. According to PEP 8, the standard indentation rule is to use **4 spaces** for each level of indentation. This means that for every block of code, such as a function, loop, or conditional statement, we use 4 spaces to indent the code.\n\nHere's an example:\n```python\ndef greet(name: str) -> None:\n    print(\"Hello, \" + name)  # 4 spaces indentation\n    if name == \"John\":\n        print(\"Hi, John!\")  # 8 spaces indentation (4 + 4)\n```\nUsing 4 spaces for indentation provides a good balance between readability and compactness. It's also the default setting in most Python IDEs and text editors.\n\n**Why 4 spaces?**\n\nThe choice of 4 spaces is a deliberate design decision that has been adopted by the Python community. It's a compromise between the need for readability and the need to keep the code concise. Using 4 spaces makes the code easier to read, especially when working with nested blocks, while also keeping the code compact enough to fit on a standard 80-character line.\n\n**Tools to enforce indentation**\n\nTo ensure consistency in our codebase, we use tools like `flake8` and `black` to enforce the 4-space indentation rule. These tools can be integrated into our CI/CD pipeline to automatically check for indentation errors and format the code accordingly.\n\n**Best practices**\n\nTo maintain a consistent coding style, we recommend the following best practices:\n\n1. **Use a consistent number of spaces**: Stick to 4 spaces for indentation throughout the codebase.\n2. **Avoid mixing tabs and spaces**: Use only spaces for indentation, as mixing tabs and spaces can lead to formatting issues.\n3. **Use a code formatter**: Tools like `black` can automatically format your code to conform to the 4-space indentation rule.\n4. **Configure your IDE**: Set your IDE to use 4 spaces for indentation to ensure consistency.\n\nBy following these guidelines and best practices, we can maintain a clean, readable, and consistent codebase that's easy to work with.",
+      "retrieved_context": "To get started, set up your development environment by installing the required tools: Python 3.11+, Docker, and the internal CLI tool. Clone the monorepo and run 'make setup' to install all dependencies.",
+      "step_timings": {
+        "tool_selection_s": 0.543,
+        "tool_execution_s": 0.0,
+        "answer_generation_s": 11.293,
+        "total_s": 11.837
+      },
+      "prompts": {
+        "tool_selection": "You are a helpful assistant. Pick the best tool for the user's question.\n\nAvailable tools: documentation_search, hr_policy_search, calculator\n\nROUTING RULES:\n- If the question mentions APIs, requests, quotas, or infrastructure numbers, use documentation_search (our docs cover capacity planning).\n- If the question is about employee policies, use hr_policy_search.\n- Only use calculator for pure math expressions with no domain context (e.g., \"what is 2+2\").\n\nRespond with ONLY the tool name, nothing else.",
+        "answer_generation": "You are a senior developer assistant with expertise in deployment, CI/CD, and infrastructure best practices.\nAnswer the question using the context as a starting point, but enrich your answer with industry best practices and additional details that developers would find helpful.\n\nContext: To get started, set up your development environment by installing the required tools: Python 3.11+, Docker, and the internal CLI tool. Clone the monorepo and run 'make setup' to install all dependencies.\n\nQuestion: What is the Python indentation rule in our codebase?\n\nProvide a comprehensive, expert-level answer:"
+      },
+      "selection_raw_response": "documentation_search",
+      "token_usage": {
+        "tool_selection": {
+          "prompt_tokens": 133,
+          "completion_tokens": 3,
+          "total_tokens": 248
+        },
+        "answer_generation": {
+          "prompt_tokens": 143,
+          "completion_tokens": 448,
+          "total_tokens": 591
+        }
+      },
       "goal": 0.0,
-      "goal_reason": "Incorrect indentation rule, stated 4 spaces instead of 2",
+      "goal_reason": "Incorrect indentation rule provided (4 spaces instead of 2 spaces)",
       "plan": 1.0,
-      "plan_reason": "The query is about codebase specifics, which is likely documented in internal developer documentation.",
+      "plan_reason": "Documentation search is the most relevant tool for finding codebase-specific rules and guidelines.",
       "act": 0.0,
-      "act_reason": "The answer does not reflect the source data at all, discussing Python style guide and indentation instead of setting up a development environment.",
-      "timestamp": "2026-06-18 05:10:59"
+      "act_reason": "No relevant information from the source data is reflected in the answer.",
+      "timestamp": "2026-08-12 15:31:17"
     }
   ],
   "v2": [
@@ -62,13 +126,33 @@
       "expected_tool": "calculator",
       "expected_answer": "200",
       "answer": "The answer is 200.00.",
+      "retrieved_context": "Calculation result: 200.0",
+      "step_timings": {
+        "tool_selection_s": 0.378,
+        "tool_execution_s": 0.0,
+        "answer_generation_s": 0.0,
+        "total_s": 0.378
+      },
+      "prompts": {
+        "tool_selection": "You are a helpful assistant. Pick the best tool for the user's question.\n\nAvailable tools:\n- documentation_search: Search internal developer documentation including API rate limits, deployment processes, incident response, and onboarding guides.\n- hr_policy_search: Search HR policies including PTO, benefits, remote work, and expense reimbursement.\n- calculator: Perform mathematical calculations including arithmetic, percentages, unit conversions, and time computations.\n\nIMPORTANT RULES:\n- If the question involves ANY numerical computation (how many, how long, percentages, time remaining), ALWAYS use calculator.\n- If the question is about company policies for employees, use hr_policy_search.\n- If the question is about technical processes or developer tools, use documentation_search.\n\nRespond with ONLY the tool name, nothing else.",
+        "answer_generation": ""
+      },
+      "selection_raw_response": "calculator",
+      "token_usage": {
+        "tool_selection": {
+          "prompt_tokens": 177,
+          "completion_tokens": 2,
+          "total_tokens": 195
+        },
+        "answer_generation": {}
+      },
       "goal": 1.0,
       "goal_reason": "Fully achieves the goal with correct information.",
       "plan": 1.0,
       "plan_reason": "Calculator is the most suitable tool for mathematical calculations, including percentages.",
       "act": 1.0,
       "act_reason": "Exact match with source data",
-      "timestamp": "2026-06-18 05:11:05"
+      "timestamp": "2026-08-12 15:31:20"
     },
     {
       "case_id": "case_2",
@@ -79,13 +163,33 @@
       "expected_tool": "calculator",
       "expected_answer": "90,000 requests",
       "answer": "The answer is 90,000.00.",
+      "retrieved_context": "Calculation result: 90000",
+      "step_timings": {
+        "tool_selection_s": 0.409,
+        "tool_execution_s": 0.0,
+        "answer_generation_s": 0.0,
+        "total_s": 0.409
+      },
+      "prompts": {
+        "tool_selection": "You are a helpful assistant. Pick the best tool for the user's question.\n\nAvailable tools:\n- documentation_search: Search internal developer documentation including API rate limits, deployment processes, incident response, and onboarding guides.\n- hr_policy_search: Search HR policies including PTO, benefits, remote work, and expense reimbursement.\n- calculator: Perform mathematical calculations including arithmetic, percentages, unit conversions, and time computations.\n\nIMPORTANT RULES:\n- If the question involves ANY numerical computation (how many, how long, percentages, time remaining), ALWAYS use calculator.\n- If the question is about company policies for employees, use hr_policy_search.\n- If the question is about technical processes or developer tools, use documentation_search.\n\nRespond with ONLY the tool name, nothing else.",
+        "answer_generation": ""
+      },
+      "selection_raw_response": "calculator",
+      "token_usage": {
+        "tool_selection": {
+          "prompt_tokens": 189,
+          "completion_tokens": 2,
+          "total_tokens": 351
+        },
+        "answer_generation": {}
+      },
       "goal": 1.0,
-      "goal_reason": "Correctly calculates the total number of requests handled in 30 minutes.",
+      "goal_reason": "Fully achieves the goal with correct information.",
       "plan": 1.0,
       "plan_reason": "Calculator is the most suitable tool for performing mathematical calculations, such as converting requests per second to requests per 30 minutes.",
       "act": 1.0,
-      "act_reason": "Exact match with source data, including formatting.",
-      "timestamp": "2026-06-18 05:11:11"
+      "act_reason": "Exact match with source data",
+      "timestamp": "2026-08-12 15:31:23"
     },
     {
       "case_id": "case_3",
@@ -96,13 +200,37 @@
       "expected_tool": "documentation_search",
       "expected_answer": "All Python code uses 2-space indentation. This is enforced by pre-commit hooks.",
       "answer": "In our codebase, Python code uses 2-space indentation.",
+      "retrieved_context": "All Python code in our monorepo uses 2-space indentation. This differs from PEP8 (4 spaces) and is enforced by our pre-commit hooks. Do not use tabs. Maximum line length is 100 characters.",
+      "step_timings": {
+        "tool_selection_s": 0.503,
+        "tool_execution_s": 0.0,
+        "answer_generation_s": 0.967,
+        "total_s": 1.471
+      },
+      "prompts": {
+        "tool_selection": "You are a helpful assistant. Pick the best tool for the user's question.\n\nAvailable tools:\n- documentation_search: Search internal developer documentation including API rate limits, deployment processes, incident response, and onboarding guides.\n- hr_policy_search: Search HR policies including PTO, benefits, remote work, and expense reimbursement.\n- calculator: Perform mathematical calculations including arithmetic, percentages, unit conversions, and time computations.\n\nIMPORTANT RULES:\n- If the question involves ANY numerical computation (how many, how long, percentages, time remaining), ALWAYS use calculator.\n- If the question is about company policies for employees, use hr_policy_search.\n- If the question is about technical processes or developer tools, use documentation_search.\n\nRespond with ONLY the tool name, nothing else.",
+        "answer_generation": "Answer the user's question using ONLY the context below.\nDo NOT add any information that is not explicitly stated in the context.\nIf the context contains a calculation result, present it clearly.\nIf the context does not contain enough information to fully answer, say \"I don't have enough information\" for the missing parts.\n\nContext: All Python code in our monorepo uses 2-space indentation. This differs from PEP8 (4 spaces) and is enforced by our pre-commit hooks. Do not use tabs. Maximum line length is 100 characters.\n\nQuestion: What is the Python indentation rule in our codebase?\n\nAnswer based strictly on the context above:"
+      },
+      "selection_raw_response": "documentation_search",
+      "token_usage": {
+        "tool_selection": {
+          "prompt_tokens": 179,
+          "completion_tokens": 3,
+          "total_tokens": 342
+        },
+        "answer_generation": {
+          "prompt_tokens": 159,
+          "completion_tokens": 14,
+          "total_tokens": 173
+        }
+      },
       "goal": 0.8,
-      "goal_reason": "Missing information about enforcement by pre-commit hooks",
+      "goal_reason": "Missing information about pre-commit hooks",
       "plan": 1.0,
-      "plan_reason": "The query is about codebase specifics, which is likely documented in internal developer documentation.",
+      "plan_reason": "Documentation search is the most relevant tool for finding codebase-specific rules and guidelines.",
       "act": 0.7,
       "act_reason": "Most claims supported, minor extras (missing details about PEP8, pre-commit hooks, and line length)",
-      "timestamp": "2026-06-18 05:11:18"
+      "timestamp": "2026-08-12 15:31:29"
     }
   ]
 }
