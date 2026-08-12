@@ -62,6 +62,15 @@ class InternalDeveloperAssistant:
             "documentation.json" if version == "v1" else "documentation_v2.json"
         )
 
+    @instrument(
+        span_type=SpanAttributes.SpanType.TOOL,
+        attributes=lambda ret, exception, *args, **kwargs: {
+            "tool_selection.selected_tool": ret,
+            "tool_selection.query": (
+                kwargs.get("query") or (args[1] if len(args) > 1 else "")
+            ),
+        },
+    )
     def _select_tool_llm(self, query: str) -> str:
         """Use LLM to select the appropriate tool.
 

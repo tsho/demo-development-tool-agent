@@ -9,11 +9,14 @@ Run with: uv run streamlit run app.py
 """
 
 import json
+import sys
 from pathlib import Path
 
 import altair as alt
 import pandas as pd
 import streamlit as st
+
+sys.path.insert(0, str(Path(__file__).parent))
 
 # --- Page Config ---
 
@@ -374,6 +377,91 @@ flowchart LR
 v2 fixes both: adds internal doc (2 spaces) + grounding constraint.
 """
     )
+
+    st.divider()
+
+    # =========================================================
+    # SECTION 4: Observability
+    # =========================================================
+    st.header("4. Observability — Agent Trace")
+    st.markdown(
+        "Step-by-step execution trace showing which tool was selected, "
+        "what was retrieved, and how the answer was generated."
+    )
+
+    for r in v2_results:
+        gpa = (r["goal"] + r["plan"] + r["act"]) / 3
+        with st.expander(
+            f"{r['case_id'].upper()} — {r['description']} [GPA: {gpa:.2f}]",
+            expanded=(r["case_id"] == "case_3"),
+        ):
+            # Step 1: Tool Selection
+            st.markdown("**Step 1 — Tool Selection** `[TOOL span]`")
+            col_q, col_t = st.columns([3, 1])
+            col_q.markdown(f"*Query:* {r['query']}")
+            col_t.success(f"`{r['tool_used']}`")
+
+            # Step 2: Tool Execution
+            st.markdown("**Step 2 — Tool Execution** `[RETRIEVAL span]`")
+            context = r.get("retrieved_context", "")
+            if context:
+                st.code(context[:400], language="text")
+            else:
+                st.info("Calculator: deterministic result, no document retrieval.")
+
+            # Step 3: Answer Generation
+            st.markdown("**Step 3 — Answer Generation** `[AGENT span]`")
+            st.info(r["answer"])
+
+            # GPA scores
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Goal", f"{r['goal']:.2f}", help=r["goal_reason"])
+            c2.metric("Plan", f"{r['plan']:.2f}", help=r["plan_reason"])
+            c3.metric("Act", f"{r['act']:.2f}", help=r["act_reason"])
+
+    # --- Live Query ---
+    st.subheader("Try a Query")
+    st.markdown("Run the agent live and inspect the trace in real time.")
+
+    col_ver, col_q = st.columns([1, 3])
+    version_select = col_ver.radio(
+        "Agent version", ["v1", "v2"], index=1, horizontal=True
+    )
+    user_query = col_q.text_input(
+        "Query",
+        placeholder="e.g. What is the Python indentation rule in our codebase?",
+    )
+
+    if st.button("Run Agent", type="primary") and user_query.strip():
+        from src.agent import InternalDeveloperAssistant
+
+        with st.spinner("Running agent..."):
+            agent = InternalDeveloperAssistant(version=version_select)
+            response = agent.run(user_query)
+
+        st.markdown("**Trace:**")
+
+        # Step 1
+        st.markdown("**Step 1 — Tool Selection** `[TOOL span]`")
+        col_lq, col_lt = st.columns([3, 1])
+        col_lq.markdown(f"*Query:* {user_query}")
+        col_lt.success(f"`{response.tool_used}`")
+
+        # Step 2
+        st.markdown("**Step 2 — Tool Execution** `[RETRIEVAL span]`")
+        tool_results = response.tool_output.get("results", [])
+        if tool_results and "message" not in tool_results[0]:
+            live_context = tool_results[0].get("content", "")
+            st.code(live_context[:400], language="text")
+        elif response.tool_used == "calculator":
+            calc_result = response.tool_output.get("result")
+            st.info(f"Calculator result: {calc_result}")
+        else:
+            st.warning("No context retrieved.")
+
+        # Step 3
+        st.markdown("**Step 3 — Answer Generation** `[AGENT span]`")
+        st.info(response.answer)
 
     st.divider()
 

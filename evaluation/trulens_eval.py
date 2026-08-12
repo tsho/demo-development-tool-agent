@@ -222,6 +222,7 @@ def _run_version(version: str) -> list[dict]:
                 "expected_tool": case["expected_tool"],
                 "expected_answer": case["expected_answer"],
                 "answer": response.answer,
+                "retrieved_context": context,
                 "goal": goal_score,
                 "goal_reason": goal_reason,
                 "plan": plan_score,
