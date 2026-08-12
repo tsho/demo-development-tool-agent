@@ -76,7 +76,7 @@ def _score_chart(results: list[dict]) -> alt.Chart:
 def main():
     """Render the Streamlit dashboard."""
     st.title("AgentGPA Evaluation Dashboard")
-    st.markdown("**Internal Developer Assistant** - Deboxx Poland Demo")
+    st.markdown("**Internal Developer Assistant**")
     st.markdown("*AI Agent for developer questions: docs, policies, calculations*")
     st.divider()
 

@@ -1,7 +1,4 @@
-"""Internal Developer Assistant - Tools.
-
-Deboxx Poland Demo: AgentGPA Evaluation Demo.
-"""
+"""Internal Developer Assistant - Tools."""
 
 import json
 from pathlib import Path

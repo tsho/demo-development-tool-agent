@@ -1,6 +1,6 @@
 # Internal Developer Assistant - AgentGPA Demo
 
-Deboxx Poland demo: AI Agent evaluation using the **Goal / Plan / Act** framework with Snowflake Cortex LLM-as-Judge.
+AI Agent evaluation using the **Goal / Plan / Act** framework with Snowflake Cortex LLM-as-Judge.
 
 ## Demo Story
 

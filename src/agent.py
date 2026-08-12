@@ -1,7 +1,5 @@
 """Internal Developer Assistant - LLM-based Agent.
 
-Deboxx Poland Demo: AgentGPA Evaluation Demo.
-
 Uses an OpenAI-compatible LLM API for tool selection and answer generation.
 v1/v2 behavior is controlled by different system prompts.
 Provider is configured via LLM_PROVIDER env var (cortex/openai/anthropic).
